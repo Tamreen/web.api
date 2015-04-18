@@ -1,6 +1,9 @@
+node_modules/
+certificates/apn/
+certificates/ssl/
+configs/
+test/
+
 npm-debug.log
-
-node_modules
-
 .DS_Store
 Thumbs.db
