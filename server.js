@@ -328,9 +328,9 @@ function authenticatable(request, response, next){
 router.post('/users/firsthandshake', function(request, response){
 
 	// Validate the mobile number.
-	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.body.countryCode) || validator.isNull(request.get('X-User-Device-Type')) || validator.isNull(request.get('X-User-Device-Token'))){
+	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.get('X-User-Device-Type')) || validator.isNull(request.get('X-User-Device-Token'))){
 		return response.status(400).send({
-			'message': 'The mobile number and/or country code and/or device type and/or device token are not valid.',
+			'message': 'The mobile number and/or device type and/or device token are not valid.',
 		});
 	}
 
@@ -368,14 +368,13 @@ router.post('/users/firsthandshake', function(request, response){
 router.post('/users/secondhandshake', function(request, response){
 
 	// Validate the mobile number and the code.
-	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.body.countryCode) || validator.isNull(request.session.code) || !validator.equals(request.body.code, request.session.code)){
+	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.session.code) || !validator.equals(request.body.code, request.session.code)){
 		return response.status(400).send({
-			'message': 'The mobile number and/or country code and/or the code are not valid.',
+			'message': 'The mobile number and/or the code are not valid.',
 		});
 	}
 
 	var e164formattedMobileNumber = request.body.e164formattedMobileNumber;
-	var countryCode = request.body.countryCode;
 	var code = request.body.code;
 
 	// Combine the password components.
@@ -402,7 +401,7 @@ router.post('/users/secondhandshake', function(request, response){
 			// Set the user information.
 			var user = rows[0];
 
-			var updateUserParameters = {token: token, countryCode: countryCode, modifiedAt: new Date()};
+			var updateUserParameters = {token: token, modifiedAt: new Date()};
 			db.query('update users set ? where id = ?', [updateUserParameters, user.id], function(error, result){
 
 				if (error){
@@ -449,7 +448,7 @@ router.post('/users/secondhandshake', function(request, response){
 
 					// Create a user second.
 					var insertUserParameters = {
-						playerId: playerId, e164formattedMobileNumber: e164formattedMobileNumber, countryCode: countryCode, token: token, deviceType: request.session.deviceType, deviceToken: request.session.deviceToken, createdAt: new Date()
+						playerId: playerId, e164formattedMobileNumber: e164formattedMobileNumber, token: token, deviceType: request.session.deviceType, deviceToken: request.session.deviceToken, createdAt: new Date()
 					};
 
 					db.query('insert into users set ?', insertUserParameters, function(error, result){
