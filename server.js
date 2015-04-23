@@ -9,9 +9,10 @@ var bodyParser = require('body-parser');
 var nconf = require('nconf');
 
 // Get the config information.
-nconf.argv().env().file({file: './configs/development.json'});
+nconf.argv().env().file({file: './configs/variables.json'});
 
 var https = require('https');
+var http = require('http');
 
 // SSL.
 var sslOptions = {
@@ -327,9 +328,9 @@ function authenticatable(request, response, next){
 router.post('/users/firsthandshake', function(request, response){
 
 	// Validate the mobile number.
-	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.get('X-User-Device-Type')) || validator.isNull(request.get('X-User-Device-Token'))){
+	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.body.countryCode) || validator.isNull(request.get('X-User-Device-Type')) || validator.isNull(request.get('X-User-Device-Token'))){
 		return response.status(400).send({
-			'message': 'The mobile number and/or device type and/or device token are not valid.',
+			'message': 'The mobile number and/or country code and/or device type and/or device token are not valid.',
 		});
 	}
 
@@ -367,13 +368,14 @@ router.post('/users/firsthandshake', function(request, response){
 router.post('/users/secondhandshake', function(request, response){
 
 	// Validate the mobile number and the code.
-	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.session.code) || !validator.equals(request.body.code, request.session.code)){
+	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.body.countryCode) || validator.isNull(request.session.code) || !validator.equals(request.body.code, request.session.code)){
 		return response.status(400).send({
-			'message': 'The mobile number and/or the code are not valid.',
+			'message': 'The mobile number and/or country code and/or the code are not valid.',
 		});
 	}
 
 	var e164formattedMobileNumber = request.body.e164formattedMobileNumber;
+	var countryCode = request.body.countryCode;
 	var code = request.body.code;
 
 	// Combine the password components.
@@ -400,7 +402,7 @@ router.post('/users/secondhandshake', function(request, response){
 			// Set the user information.
 			var user = rows[0];
 
-			var updateUserParameters = {token: token, modifiedAt: new Date()};
+			var updateUserParameters = {token: token, countryCode: countryCode, modifiedAt: new Date()};
 			db.query('update users set ? where id = ?', [updateUserParameters, user.id], function(error, result){
 
 				if (error){
@@ -432,7 +434,7 @@ router.post('/users/secondhandshake', function(request, response){
 			// Create a player first.
 			var insertPlayerParameters = {fullname: 'temp'};
 
-			db.query('insert into players set ?', insertPlayerParameters, function(error, result){
+			db.query('insert into players set ?', insertPlayerParameters, function(error, insertPlayerResult){
 
 					if (error){
 						console.error(error.stack);
@@ -443,12 +445,11 @@ router.post('/users/secondhandshake', function(request, response){
 					}
 
 					// Get the player id to be used along with user id.
-					var playerId = result.insertId;
+					var playerId = insertPlayerResult.insertId;
 
 					// Create a user second.
 					var insertUserParameters = {
-						playerId: playerId, e164formattedMobileNumber: e164formattedMobileNumber, token: token,
-						deviceType: request.session.deviceType, deviceToken: request.session.deviceToken, createdAt: new Date()
+						playerId: playerId, e164formattedMobileNumber: e164formattedMobileNumber, countryCode: countryCode, token: token, deviceType: request.session.deviceType, deviceToken: request.session.deviceToken, createdAt: new Date()
 					};
 
 					db.query('insert into users set ?', insertUserParameters, function(error, result){
@@ -654,6 +655,8 @@ router.post('/groups/add', authenticatable, function(request, response){
 			});
 			return;
 		}
+
+		console.log('Found ' + rows.length);
 
 		// Get the user information.
 		var user = rows[0];
@@ -1981,6 +1984,11 @@ app.use('/api/v1', router);
 
 var port = nconf.get('appPort');
 
-https.createServer(sslOptions, app).listen(port);
+if (nconf.get('environment') == 'development'){
+	http.createServer(app).listen(port);
+}else{
+	https.createServer(sslOptions, app).listen(port);
+}
+
 console.log("App active on localhost:" + port);
 
