@@ -1975,6 +1975,67 @@ router.get('/trainings/:trainingId/activities/latest', authenticatable, function
 	response.redirect('api/v1/trainings/' + request.params.trainingId + '/activities');
 });
 
+// POST /feedbacks/add
+router.post('/feedbacks/add', function(request, response){
+
+	// Get the user token.
+	var token = request.get('X-User-Token');
+
+	// Normalize the token.
+	if (validator.isNull(token)){
+		token = null;
+	}
+
+	// Validate the content of the feedback.
+	if (validator.isNull(request.body.content)){
+		response.status(400).send({
+			'message': 'Content of the feedback cannot be empty.'
+		});
+		return;
+	}
+
+	// Get the content and have it in a variable.
+	var content = request.body.content;
+
+	db.query('select id from users where token = ? and token is not null', [token], function(error, rows){
+
+		if (error){
+			console.error(error.stack);
+			response.status(500).send({
+				'message': 'Internal server error.',
+			});
+			return;
+		}
+
+		// Set the default value of the author.
+		var authorId = null;
+
+		if (rows.length > 0){
+			var user = rows[0];
+			authorId = user.id;
+		}
+
+		var insertFeedbackParameters = {authorId: authorId, content: content, createdAt: new Date()};
+
+		db.query('insert into feedbacks set ?', [insertFeedbackParameters], function(error, result){
+
+			if (error){
+				console.error(error.stack);
+				response.status(500).send({
+					'message': 'Internal server error.',
+				});
+				return;
+			}
+
+			// Done.
+			response.status(204).send();
+
+		});
+	});
+
+});
+
+
 // Attach all previous routes under /api/v1.
 app.use('/api/v1', router);
 
