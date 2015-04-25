@@ -78,6 +78,12 @@ var port = 4000;
 
 var SMS = {
 	send: function(to, message){
+
+		if (nconf.get('environment') == 'development'){
+			console.log({to: to, message: message});
+			return;
+		}
+
 		nexmo.sendSMSMessage({
 			from: nconf.get('nexmoNumber'),
 			to: to,
@@ -948,7 +954,7 @@ router.post('/groups/:groupId/players/add', authenticatable, function(request, r
 				}
 
 				var updateGroupPlayerParameters = {joinedAt: new Date(), leftAt: null};
-				db.query('update groupPlayers set ? where groupId = ? and playerId = ?', [updateGroupPlayerParameters, groupPlayer.groupId, groupPlayer.playerId], function(error, result){
+				db.query('update groupPlayers set ? where groupId = ? and playerId = ?', [updateGroupPlayerParameters, groupId, groupPlayer.playerId], function(error, result){
 
 					if (error){
 						console.error(error.stack);
@@ -2043,6 +2049,7 @@ app.use('/api/v1', router);
 // app.listen(port);
 
 var port = nconf.get('appPort');
+
 
 if (nconf.get('environment') == 'development'){
 	http.createServer(app).listen(port);
