@@ -4,6 +4,7 @@
   "main": "server.js",
   "dependencies": {
     "apn": "^1.7.2",
+    "bluebird": "^2.9.25",
     "body-parser": "*",
     "express": "latest",
     "express-session": "latest",

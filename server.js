@@ -1,5 +1,9 @@
 
+var Promise = require('bluebird');
+var using = Promise.using;
+
 var fs = require('fs');
+var mysql = require('mysql');
 
 var express = require("express");
 var session = require('express-session');
@@ -13,6 +17,10 @@ nconf.argv().env().file({file: './configs/variables.json'});
 
 var https = require('https');
 var http = require('http');
+
+// Promisify somethings.
+Promise.promisifyAll(require('mysql/lib/Connection').prototype);
+Promise.promisifyAll(require('mysql/lib/Pool').prototype);
 
 // SSL.
 var sslOptions = {
@@ -31,16 +39,45 @@ var apnOptions = {
 	'passphrase': nconf.get('apnPassphrase'),
 };
 
-//
-var mysql = require('mysql');
+// var db = mysql.createConnection({
+// 	host: nconf.get('databaseHost'),
+// 	port: nconf.get('databasePort'),
+// 	user: nconf.get('databaseUsername'),
+// 	password: nconf.get('databasePassword'),
+// 	database: nconf.get('databaseName')
+// });
 
-var db = mysql.createConnection({
+var pool = mysql.createPool({
 	host: nconf.get('databaseHost'),
 	port: nconf.get('databasePort'),
 	user: nconf.get('databaseUsername'),
 	password: nconf.get('databasePassword'),
-	database: nconf.get('databaseName')
+	database: nconf.get('databaseName'),
 });
+
+// TODO: Call this db an API.
+var db = {
+
+	getConnection: function(){
+		return pool.getConnectionAsync().disposer(function(connection){
+			return connection.destroy();
+		});
+	},
+
+	query: function(command){
+		return using(db.getConnection(), function(connection){
+			return connection.queryAsync(command).then(function(results){
+				// Return only the rows, no need for fields for now.
+				return results[0];
+			});
+		});
+	},
+
+	format: function(query, parameters){
+		return mysql.format(query, parameters);
+	}
+
+};
 
 //
 var uuid = require('node-uuid');
@@ -278,55 +315,57 @@ app.use(bodyParser.json());
 // Check if the user is logged in or response with a not autherized error.
 function authenticatable(request, response, next){
 
-	console.log('Authenticatable has been called.');
+	console.log('Authentication has been called.');
 
 	if (validator.isNull(request.get('X-User-Token'))){
 		return response.status(401).send({
-			'message': 'Not authorized to access this API.',
+			'message': 'Not authorized to access this resource.',
 		});
 	}
 
-	// Set the token of user.
+	// Get the token of user and other information.
 	var token = request.get('X-User-Token');
 	var deviceType = request.get('X-User-Device-Type');
 	var deviceToken = request.get('X-User-Device-Token');
 
-	db.query('select * from users where token = ?', [token], function(error, rows){
+	// Get the current user from request.
+	usersApi.getCurrent(request)
 
-		if (error){
-			console.error(error.stack);
-			return response.status(500).send({
-				'message': 'Internal server error.'
-			});
-		}
+	// Update the device type and token if given.
+	.then(function(user){
 
-		if (rows.length == 0){
-			return response.status(401).send({
-				'message': 'Not authorized to access this API.',
-			});
-		}
-
-		var user = rows[0];
+		console.log('The user has been found.');
 
 		if (!validator.isNull(deviceType) && !validator.isNull(deviceToken) && !validator.equals(deviceToken, 'null')){
 
 			// Check if the old information is the same.
 			if (!validator.equals(deviceType, user.deviceType) || !validator.equals(deviceToken, user.deviceToken)){
 
-				updateUserParameters = {deviceType: deviceType, deviceToken: deviceToken, modifiedAt: new Date()};
-
-				db.query('update users set ? where id = ?', [updateUserParameters, user.id], function(error, result){
-
-					if (error){
-						console.error(error.stack);
-					}
-					//console.log(result);
-				});
+				var updateUserParameters = {deviceType: deviceType, deviceToken: deviceToken, modifiedAt: new Date()};
+				var queryUpdateUser = db.format('update users set ? where id = ?', [updateUserParameters, user.id]);
+				return db.query(queryUpdateUser);
 			}
 		}
 
-		// Otherwise.
+	})
+
+	// Response about it.
+	.then(function(done){
+		console.log('Go to the next route.');
 		return next();
+	})
+
+	// Otherwise.
+	.catch(function(error){
+
+		// Log about it.
+		console.log(error);
+
+		// Not authorized.
+		return response.status(401).send({
+			'message': 'Not authorized to access this resource.',
+		});
+
 	});
 }
 
@@ -492,25 +531,148 @@ router.post('/users/secondhandshake', function(request, response){
 // GET /users/logout
 router.get('/users/logout', authenticatable, function(request, response){
 
-	// Get the user token.
-	var token = request.get('X-User-Token');
+	// Keep the user information for logging.
+	// It is better not to use one letter variables.
+	var u = null;
 
-	var updateUserParameters = {token: null, modifiedAt: new Date()};
-	db.query('update users set ? where token = ?', [updateUserParameters, token], function(error, result){
+	// Get the current user.
+	usersApi.getCurrent(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.'
-			});
-			return;
-		}
+	// Logout the user.
+	.then(function(user){
+		u = user;
+		return usersApi.logout(user);
+	})
 
-		// Done.
-		response.status(204).send();
-		return;
+	// Response about it.
+	.then(function(logoutResult){
+		console.log('The user #%d has logged out.', u.id);
+		return response.status(204).send();
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
+
+// Handle errors as a RESTful API.
+function handleApiErrors(error, response){
+
+	if (error instanceof ApiError){
+		return response.status(error.statusCode).send({
+			'message': error.message,
+		})
+	}
+
+	// Otherwise, Log about it.
+	console.log(error);
+
+	// Response to the user with something went wrong.
+	return response.status(500).send({
+		'message': 'Something went wrong.',
+	});
+}
+
+// Define some errors.
+// TODO: Find a better way to define these errors.
+
+function ApiError(message, statusCode){
+	this.message = message;
+	this.statusCode = statusCode;
+}
+
+function NotFoundError(message){
+	this.message = message;
+	this.statusCode = 404;
+}
+
+function BadRequestError(message){
+	this.message = message;
+	this.statusCode = 400;
+}
+
+// 
+ApiError.prototype = Object.create(Error.prototype);
+
+// 
+BadRequestError.prototype = Object.create(ApiError.prototype); // 400.
+NotFoundError.prototype = Object.create(ApiError.prototype); // 404.
+
+var usersApi = {
+
+	getCurrent: function(request){
+
+		return new Promise(function(resolve, reject){
+
+			// Get the given user token.
+			var token = request.get('X-User-Token');
+
+			// Check if the token is invalid, then reject the promise with BadRequestError.
+			if (validator.isNull(token)){
+				return reject(new BadRequestError('The user token cannot be empty.'));
+			}
+
+			// Search for a user with the given token.
+			var queryGetCurrentUser = db.format('select * from users where token = ? and token is not null limit 1', [token]);
+
+			db.query(queryGetCurrentUser).then(function(users){
+				
+				if (users.length == 0){
+					return reject(new NotFoundError('The user cannot be found.'));
+				}
+
+				// Get the first user.
+				var user = users[0];
+				resolve(user);
+			});
+
+		});
+	},
+
+	getCurrentIfAny: function(request){
+
+		return new Promise(function(resolve, reject){
+
+			usersApi.getCurrent(request)
+
+			.then(function(user){
+				console.log('ok happened.');
+				return resolve(user);
+			})
+
+			.catch(function(error){
+				console.log('error happened.', error);
+				return resolve(null);
+			});
+
+		});
+	},
+
+	findById: function(id){
+		return null;
+	},
+
+	logout: function(user){
+		
+		var updateUserParameters = {token: null, modifiedAt: new Date()};
+		var queryUpdateUser = db.format('update users set ? where token = ?', [updateUserParameters, user.token]);
+		return db.query(queryUpdateUser);
+	},
+
+};
+
+var feedbacksApi = {
+
+	send: function(content, authorId){
+
+		var insertFeedbackParameters = {authorId: authorId, content: content, createdAt: new Date()};
+		var queryInsertFeedback = db.format('insert into feedbacks set ?', [insertFeedbackParameters]);
+		return db.query(queryInsertFeedback);
+	}
+
+};
 
 // POST /users/update
 router.post('/users/update', authenticatable, function(request, response){
@@ -1982,6 +2144,7 @@ router.get('/trainings/:trainingId/activities/latest', authenticatable, function
 });
 
 // POST /feedbacks/add
+// TODO: Promises and the route name should be /feedbacks/send.
 router.post('/feedbacks/add', function(request, response){
 
 	// Get the user token.
@@ -2003,40 +2166,32 @@ router.post('/feedbacks/add', function(request, response){
 	// Get the content and have it in a variable.
 	var content = request.body.content;
 
-	db.query('select id from users where token = ? and token is not null', [token], function(error, rows){
+	// Get the current user if any.
+	usersApi.getCurrentIfAny(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.',
-			});
-			return;
-		}
+	.then(function(user){
 
 		// Set the default value of the author.
 		var authorId = null;
 
-		if (rows.length > 0){
-			var user = rows[0];
+		if (user){
 			authorId = user.id;
 		}
 
-		var insertFeedbackParameters = {authorId: authorId, content: content, createdAt: new Date()};
+		// Send the feedback.
+		return feedbacksApi.send(content, authorId);
+	})
 
-		db.query('insert into feedbacks set ?', [insertFeedbackParameters], function(error, result){
-
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error.',
-				});
-				return;
-			}
-
-			// Done.
-			response.status(204).send();
-
+	// Response about it.
+	.then(function(){
+		return response.status(201).send({
+			'message': 'The feedback has been sent.'
 		});
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
 
 });
@@ -2059,3 +2214,8 @@ if (nconf.get('environment') == 'development'){
 
 console.log("App active on localhost:" + port);
 
+// db.query('select * from trainings limit 1').then(function(trainings){
+// 	console.log(trainings);
+// }).catch(function(error){
+// 	console.log('There is an error.');
+// });
