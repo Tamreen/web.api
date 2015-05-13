@@ -399,12 +399,10 @@ var UserService = {
 			UserService.findCurrentOrDie(request)
 
 			.then(function(user){
-				console.log('ok happened.');
 				return resolve(user);
 			})
 
 			.catch(function(error){
-				console.log('error happened.', error);
 				return resolve(null);
 			});
 
@@ -474,9 +472,17 @@ var UserService = {
 			// Delete fullname parameter.
 			delete parameters.fullname;
 
-			var queryInsertUser = '';
+			// Add created at and player id parameters.
+			// TODO: Maybe the date could be better.
+			parameters.createdAt = new Date();
+			parameters.playerId = player.id;
 
-			return 
+			var queryInsertUser = db.format('insert into users set ?', parameters);
+			return db.query(queryInsertUser)
+
+			.then(function(insertUserResult){
+				return UserService.findById(insertUserResult.insertId);
+			});
 
 		});
 
@@ -488,6 +494,37 @@ var UserService = {
 		var queryUpdateUser = db.format('update users set ? where token = ?', [updateUserParameters, user.token]);
 		return db.query(queryUpdateUser);
 	},
+
+};
+
+var PlayerService = {
+
+	//
+	findById: function(id){
+
+		var queryGetPlayerById = db.format('select * from players where id = ? limit 1', [id]);
+		
+		return db.query(queryGetPlayerById).then(function(players){
+
+			if (players.length == 0){
+				return null;
+			}
+
+			var player = players[0];
+			return player;
+		});
+	},
+
+	create: function(parameters){
+
+		var queryInsertPlayer = db.format('insert into players set ?', parameters);
+		
+		return db.query(queryInsertPlayer)
+
+		.then(function(insertPlayerResult){
+			return PlayerService.findById(insertPlayerResult.insertId);
+		});
+	}
 
 };
 
@@ -610,7 +647,7 @@ router.post('/users/secondhandshake', function(request, response){
 	delete request.session.code;
 
 	// Find a user by the e164 formatted mobile number or create one.
-	var createUserParameters = {deviceType: request.session.deviceType, deviceToken: request.session.deviceToken};
+	var createUserParameters = {deviceType: request.session.deviceType, deviceToken: request.session.deviceToken, fullname: 'temp'};
 
 	UserService.findByE164formattedMobileNumberOrCreate(e164formattedMobileNumber, createUserParameters)
 
@@ -2204,7 +2241,13 @@ if (nconf.get('environment') == 'development'){
 
 console.log("App active on localhost:" + port);
 
-UserService.findByE164formattedMobileNumber('+966553572').then(function(user){
-	console.log('user is ', user);
+// UserService.findByE164formattedMobileNumber('+966553572').then(function(user){
+// 	console.log('user is ', user);
+// });
+
+var createUserParameters = {e164formattedMobileNumber: '+12345678910', deviceType: 'ios', deviceToken: '1212121213131313131313', fullname: 'temp'};
+
+UserService.create(createUserParameters).then(function(user){
+	console.log(user);
 });
 
