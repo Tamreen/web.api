@@ -55,7 +55,7 @@ var pool = mysql.createPool({
 	database: nconf.get('databaseName'),
 });
 
-// TODO: Call this db an API.
+// TODO: This should be service.
 var db = {
 
 	getConnection: function(){
@@ -113,6 +113,7 @@ var e164Format = /^\+[0-9]{8,15}$/;
 var app = express();
 var port = 4000;
 
+// This should be a service.
 var SMS = {
 	send: function(to, message){
 
@@ -136,6 +137,7 @@ var SMS = {
 	}
 };
 
+// This should be a service.
 var pushNotification = {
 
 	toAndroid: function(message, registrationIds){
@@ -182,6 +184,7 @@ var pushNotification = {
 	}
 };
 
+// This should be a service.
 var activity = {
 
 	toString: function(type, authorFullname){
@@ -312,6 +315,193 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Parse application/json.
 app.use(bodyParser.json());
 
+
+// Handle errors as a RESTful API.
+function handleApiErrors(error, response){
+
+	if (error instanceof ApiError){
+		return response.status(error.statusCode).send({
+			'message': error.message,
+		})
+	}
+
+	// Otherwise, Log about it.
+	console.log(error);
+
+	// Response to the user with something went wrong.
+	return response.status(500).send({
+		'message': 'Something went wrong.',
+	});
+}
+
+// Define some errors.
+// TODO: Find a better way to define these errors.
+
+function ApiError(message, statusCode){
+	this.message = message;
+	this.statusCode = statusCode;
+}
+
+function NotFoundError(message){
+	this.message = message;
+	this.statusCode = 404;
+}
+
+function BadRequestError(message){
+	this.message = message;
+	this.statusCode = 400;
+}
+
+// 
+ApiError.prototype = Object.create(Error.prototype);
+
+// 
+BadRequestError.prototype = Object.create(ApiError.prototype); // 400.
+NotFoundError.prototype = Object.create(ApiError.prototype); // 404.
+
+var UserService = {
+
+	//
+	findCurrentOrDie: function(request){
+
+		return new Promise(function(resolve, reject){
+
+			// Get the given user token.
+			var token = request.get('X-User-Token');
+
+			// Check if the token is invalid, then reject the promise with BadRequestError.
+			if (validator.isNull(token)){
+				return reject(new BadRequestError('The user token cannot be empty.'));
+			}
+
+			// Search for a user with the given token.
+			var queryfindCurrentOrDieUser = db.format('select * from users where token = ? and token is not null limit 1', [token]);
+
+			db.query(queryfindCurrentOrDieUser).then(function(users){
+				
+				if (users.length == 0){
+					return reject(new NotFoundError('The user cannot be found.'));
+				}
+
+				// Get the first user.
+				var user = users[0];
+				return resolve(user);
+			});
+
+		});
+	},
+
+	//
+	findCurrentIfAny: function(request){
+
+		return new Promise(function(resolve, reject){
+
+			UserService.findCurrentOrDie(request)
+
+			.then(function(user){
+				console.log('ok happened.');
+				return resolve(user);
+			})
+
+			.catch(function(error){
+				console.log('error happened.', error);
+				return resolve(null);
+			});
+
+		});
+	},
+
+	//
+	findById: function(id){
+
+		var queryGetUserById = db.format('select * from users where id = ? limit 1', [id]);
+		
+		return db.query(queryGetUserById).then(function(users){
+
+			if (users.length == 0){
+				return null;
+			}
+
+			var user = users[0];
+			return user;
+		});
+	},
+
+	//
+	findByE164formattedMobileNumber: function(e164formattedMobileNumber){
+
+		var queryGetUserByE164formattedMobileNumber = db.format('select * from users where e164formattedMobileNumber = ? limit 1', [e164formattedMobileNumber]);
+		
+		return db.query(queryGetUserByE164formattedMobileNumber).then(function(users){
+
+			if (users.length == 0){
+				return null;
+			}
+
+			var user = users[0];
+			return user;
+		});
+	},
+
+	//
+	findByE164formattedMobileNumberOrCreate: function(e164formattedMobileNumber, parameters){
+		
+		// Find the 
+		return UserService.findByE164formattedMobileNumber(e164formattedMobileNumber)
+		
+		.then(function(user){
+
+			if (!user){
+
+				// Create the user if it does not exist.
+				// return UserService.create(e164formattedMobileNumber, token, deviceType, deviceToken, fullname);
+				// It must return the user information not just the user id.
+				return UserService.create(parameters);
+			}
+
+			return user;
+		})
+	},
+
+	create: function(parameters){
+
+		// Create a player first.
+		return PlayerService.create({fullname: parameters.fullname})
+
+		// Create the user.
+		.then(function(player){
+
+			// Delete fullname parameter.
+			delete parameters.fullname;
+
+			var queryInsertUser = '';
+
+			return 
+
+		});
+
+	},
+
+	logout: function(user){
+		
+		var updateUserParameters = {token: null, modifiedAt: new Date()};
+		var queryUpdateUser = db.format('update users set ? where token = ?', [updateUserParameters, user.token]);
+		return db.query(queryUpdateUser);
+	},
+
+};
+
+var FeedbackService = {
+
+	send: function(content, authorId){
+
+		var insertFeedbackParameters = {authorId: authorId, content: content, createdAt: new Date()};
+		var queryInsertFeedback = db.format('insert into feedbacks set ?', [insertFeedbackParameters]);
+		return db.query(queryInsertFeedback);
+	}
+
+};
+
 // Check if the user is logged in or response with a not autherized error.
 function authenticatable(request, response, next){
 
@@ -329,7 +519,7 @@ function authenticatable(request, response, next){
 	var deviceToken = request.get('X-User-Device-Token');
 
 	// Get the current user from request.
-	usersApi.getCurrent(request)
+	UserService.findCurrentOrDie(request)
 
 	// Update the device type and token if given.
 	.then(function(user){
@@ -395,18 +585,8 @@ router.post('/users/firsthandshake', function(request, response){
 	// Send a success response.
 	response.status(204).send('/users/firsthandshake');
 
-	// Send an SMS to the user containing the code.
-	// twilio.messages.create({ 
-	// 	to: e164formattedMobileNumber, 
-	// 	from: nconf.get('twilioNumber'), 
-	// 	body: "تطبيق تمرين - كلمة المرور المؤقتة " + code,   
-	// }, function(error, message){ 
-	// 	//console.log(message.sid); 
-	// });
-
-	SMS.send(e164formattedMobileNumber, "تطبيق تمرين - كلمة المرور المؤقتة " + code);
-
-	// console.log(code);
+	// Send the SMS containing the temporary code.
+	return SMS.send(e164formattedMobileNumber, "تطبيق تمرين - كلمة المرور المؤقتة " + code);
 });
 
 // POST /users/secondhandshake
@@ -429,103 +609,31 @@ router.post('/users/secondhandshake', function(request, response){
 	// Forget about it.
 	delete request.session.code;
 
-	// Search for a user with the exact same mobile number or create one.
-	db.query('select * from users where e164formattedMobileNumber = ?', [e164formattedMobileNumber], function(error, rows){
-		
-		if (error){
-			console.error(error.stack);
-			return response.status(500).send({
-				'message': 'Internal server error.'
-			});
-		}
+	// Find a user by the e164 formatted mobile number or create one.
+	var createUserParameters = {deviceType: request.session.deviceType, deviceToken: request.session.deviceToken};
 
-		if (rows.length > 0){
-			
-			console.log('The user has been found.');
+	UserService.findByE164formattedMobileNumberOrCreate(e164formattedMobileNumber, createUserParameters)
 
-			// Set the user information.
-			var user = rows[0];
+	// Found or created, then update the token.
+	.then(function(user){
 
-			var updateUserParameters = {token: token, modifiedAt: new Date()};
-			db.query('update users set ? where id = ?', [updateUserParameters, user.id], function(error, result){
+		// This means the user logged in.
+		return UserService.updateById(user.id, {token: token});
 
-				if (error){
-					console.error(error.stack);
-					return response.status(500).send({
-						'message': 'Internal server error.'
-					});
-				}
+	})
 
-				db.query('select * from users where id = ?', [user.id], function(error, rows){
+	// Response about it.
+	then(function(user){
 
-					if (error){
-						console.error(error.stack);
-						return response.status(500).send({
-							'message': 'Internal server error.'
-						});
-					}
+		return response.send(user);
 
-					// That is it.
-					response.send(rows[0]);
-					return;
-				});
+	})
 
-			});
-
-		}else{
-			console.log('The user has not been found.');
-
-			// Create a player first.
-			var insertPlayerParameters = {fullname: 'temp'};
-
-			db.query('insert into players set ?', insertPlayerParameters, function(error, insertPlayerResult){
-
-					if (error){
-						console.error(error.stack);
-						response.status(500).send({
-							'message': 'Internal server error.'
-						});
-						return;
-					}
-
-					// Get the player id to be used along with user id.
-					var playerId = insertPlayerResult.insertId;
-
-					// Create a user second.
-					var insertUserParameters = {
-						playerId: playerId, e164formattedMobileNumber: e164formattedMobileNumber, token: token, deviceType: request.session.deviceType, deviceToken: request.session.deviceToken, createdAt: new Date()
-					};
-
-					db.query('insert into users set ?', insertUserParameters, function(error, result){
-
-						if (error){
-							console.error(error.stack);
-							response.status(500).send({
-								'message': 'Internal server error.'
-							});
-							return;
-						}
-
-						// Otherwise, get the id of the created user.
-						var userId = result.insertId;
-
-						db.query('select * from users where id = ?', [userId], function(error, rows){
-
-							if (error){
-								console.error(error.stack);
-								response.status(500).send({
-									'message': 'Internal server error.'
-								});
-								return;
-							}
-
-							response.send(rows[0]);
-							return;
-						});
-					});
-			});
-		}
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /users/logout
@@ -536,12 +644,12 @@ router.get('/users/logout', authenticatable, function(request, response){
 	var u = null;
 
 	// Get the current user.
-	usersApi.getCurrent(request)
+	UserService.findCurrentOrDie(request)
 
 	// Logout the user.
 	.then(function(user){
 		u = user;
-		return usersApi.logout(user);
+		return UserService.logout(user);
 	})
 
 	// Response about it.
@@ -554,125 +662,7 @@ router.get('/users/logout', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
-
-// Handle errors as a RESTful API.
-function handleApiErrors(error, response){
-
-	if (error instanceof ApiError){
-		return response.status(error.statusCode).send({
-			'message': error.message,
-		})
-	}
-
-	// Otherwise, Log about it.
-	console.log(error);
-
-	// Response to the user with something went wrong.
-	return response.status(500).send({
-		'message': 'Something went wrong.',
-	});
-}
-
-// Define some errors.
-// TODO: Find a better way to define these errors.
-
-function ApiError(message, statusCode){
-	this.message = message;
-	this.statusCode = statusCode;
-}
-
-function NotFoundError(message){
-	this.message = message;
-	this.statusCode = 404;
-}
-
-function BadRequestError(message){
-	this.message = message;
-	this.statusCode = 400;
-}
-
-// 
-ApiError.prototype = Object.create(Error.prototype);
-
-// 
-BadRequestError.prototype = Object.create(ApiError.prototype); // 400.
-NotFoundError.prototype = Object.create(ApiError.prototype); // 404.
-
-var usersApi = {
-
-	getCurrent: function(request){
-
-		return new Promise(function(resolve, reject){
-
-			// Get the given user token.
-			var token = request.get('X-User-Token');
-
-			// Check if the token is invalid, then reject the promise with BadRequestError.
-			if (validator.isNull(token)){
-				return reject(new BadRequestError('The user token cannot be empty.'));
-			}
-
-			// Search for a user with the given token.
-			var queryGetCurrentUser = db.format('select * from users where token = ? and token is not null limit 1', [token]);
-
-			db.query(queryGetCurrentUser).then(function(users){
-				
-				if (users.length == 0){
-					return reject(new NotFoundError('The user cannot be found.'));
-				}
-
-				// Get the first user.
-				var user = users[0];
-				resolve(user);
-			});
-
-		});
-	},
-
-	getCurrentIfAny: function(request){
-
-		return new Promise(function(resolve, reject){
-
-			usersApi.getCurrent(request)
-
-			.then(function(user){
-				console.log('ok happened.');
-				return resolve(user);
-			})
-
-			.catch(function(error){
-				console.log('error happened.', error);
-				return resolve(null);
-			});
-
-		});
-	},
-
-	findById: function(id){
-		return null;
-	},
-
-	logout: function(user){
-		
-		var updateUserParameters = {token: null, modifiedAt: new Date()};
-		var queryUpdateUser = db.format('update users set ? where token = ?', [updateUserParameters, user.token]);
-		return db.query(queryUpdateUser);
-	},
-
-};
-
-var feedbacksApi = {
-
-	send: function(content, authorId){
-
-		var insertFeedbackParameters = {authorId: authorId, content: content, createdAt: new Date()};
-		var queryInsertFeedback = db.format('insert into feedbacks set ?', [insertFeedbackParameters]);
-		return db.query(queryInsertFeedback);
-	}
-
-};
 
 // POST /users/update
 router.post('/users/update', authenticatable, function(request, response){
@@ -2167,7 +2157,7 @@ router.post('/feedbacks/add', function(request, response){
 	var content = request.body.content;
 
 	// Get the current user if any.
-	usersApi.getCurrentIfAny(request)
+	UserService.findCurrentIfAny(request)
 
 	.then(function(user){
 
@@ -2179,7 +2169,7 @@ router.post('/feedbacks/add', function(request, response){
 		}
 
 		// Send the feedback.
-		return feedbacksApi.send(content, authorId);
+		return FeedbackService.send(content, authorId);
 	})
 
 	// Response about it.
@@ -2214,8 +2204,7 @@ if (nconf.get('environment') == 'development'){
 
 console.log("App active on localhost:" + port);
 
-// db.query('select * from trainings limit 1').then(function(trainings){
-// 	console.log(trainings);
-// }).catch(function(error){
-// 	console.log('There is an error.');
-// });
+UserService.findByE164formattedMobileNumber('+966553572').then(function(user){
+	console.log('user is ', user);
+});
+
