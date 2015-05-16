@@ -461,6 +461,7 @@ var UserService = {
 		})
 	},
 
+	//
 	create: function(parameters){
 
 		// Create a player first.
@@ -478,6 +479,7 @@ var UserService = {
 			parameters.playerId = player.id;
 
 			var queryInsertUser = db.format('insert into users set ?', parameters);
+			
 			return db.query(queryInsertUser)
 
 			.then(function(insertUserResult){
@@ -488,6 +490,19 @@ var UserService = {
 
 	},
 
+	//
+	updateForId: function(parameters, id){
+
+		var queryUpdateUserById = db.format('update users set ? where id = ?', [parameters, id]);
+		
+		return db.query(queryUpdateUserById)
+
+		.then(function(updateUserByIdResult){
+			return UserService.findById(id);
+		});
+	},
+
+	//
 	logout: function(user){
 		
 		var updateUserParameters = {token: null, modifiedAt: new Date()};
@@ -524,6 +539,39 @@ var PlayerService = {
 		.then(function(insertPlayerResult){
 			return PlayerService.findById(insertPlayerResult.insertId);
 		});
+	},
+
+	//
+	updateForId: function(parameters, id){
+
+		var queryUpdatePlayerById = db.format('update players set ? where id = ?', [parameters, id]);
+		
+		return db.query(queryUpdatePlayerById)
+
+		.then(function(updatePlayerByIdResult){
+			return PlayerService.findById(id);
+		});
+	},
+
+};
+
+var GroupService = {
+
+	// TODO: The query that is inside should be easier.
+	listForPlayerId: function(playerId){
+
+		var queryListGroupsForPlayerId = db.format('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [playerId]);
+
+		return db.query(queryListGroupsForPlayerId);
+	},
+
+	// TODO: The query that is inside should be easier.
+	findByIdForPlayerId: function(id, playerId){
+
+		var queryFindGroupByIdForPlayerId = db.format('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [playerId, id]);
+
+		return db.query(queryFindGroupByIdForPlayerId);
+
 	}
 
 };
@@ -655,12 +703,12 @@ router.post('/users/secondhandshake', function(request, response){
 	.then(function(user){
 
 		// This means the user logged in.
-		return UserService.updateById(user.id, {token: token});
+		return UserService.updateForId({token: token}, user.id);
 
 	})
 
 	// Response about it.
-	then(function(user){
+	.then(function(user){
 
 		return response.send(user);
 
@@ -670,7 +718,6 @@ router.post('/users/secondhandshake', function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /users/logout
@@ -680,7 +727,7 @@ router.get('/users/logout', authenticatable, function(request, response){
 	// It is better not to use one letter variables.
 	var u = null;
 
-	// Get the current user.
+	// Find the current user or die.
 	UserService.findCurrentOrDie(request)
 
 	// Logout the user.
@@ -712,73 +759,49 @@ router.post('/users/update', authenticatable, function(request, response){
 	}
 
 	// Set the fullname value.
-	var token = request.get('X-User-Token');
 	var fullname = request.body.fullname;
 
-	db.query('select * from users where token = ?', [token], function(error, rows){
-		
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.',
-			});
-			return;
-		}
+	// Find the current user or die.
+	UserService.findCurrentOrDie(request)
 
-		// Set the user.
-		var user = rows[0];
+	// Update the fullname.
+	.then(function(user){
+		return PlayerService.updateForId({fullname: fullname}, user.playerId);
+	})
 
-		var updatePlayerParameters = {fullname: fullname, modifiedAt: new Date()};
-		db.query('update players set ? where id = ?', [updatePlayerParameters, user.playerId], function(error, result){
+	// Response about it.
+	.then(function(player){
+		response.status(204).send();
+		return PlayerService.updateForId({loginable: 1}, player.id);
+	})
 
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error.',
-				});
-				return;
-			}
-
-			response.status(204).send();
-
-			db.query('update users set loginable = 1 where id = ?', [user.id], function(error, result){
-
-				if (error){
-					console.error(error.stack);
-					response.status(500).send({
-						'message': 'Internal server error.',
-					});
-					return;
-				}
-
-				console.log('User has updated the information.');
-			});
-
-			return;
-		});
-
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /groups
 router.get('/groups', authenticatable, function(request, response){
 
-	// Get the user token.
-	var token = request.get('X-User-Token');
+	UserService.findCurrentOrDie(request)
 
-	db.query('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [token], function(error, rows){
+	// List all groups that the user in.
+	.then(function(user){
+		return GroupService.listForPlayerId(user.playerId);
+	})
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.',
-			});
-			return;
-		}
+	// Response about it.
+	.then(function(groups){
+		return response.send(groups);
+	})
 
-		response.send(rows);
-		return;
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /groups/latest
@@ -789,38 +812,25 @@ router.get('/groups/latest', authenticatable, function(request, response){
 // GET /groups
 router.get('/groups/:id', authenticatable, function(request, response){
 
-	// Get the user token.
-	var token = request.get('X-User-Token');
-
-	if (!validator.isNumeric(request.params.id)){
-		response.status(400).send({
-			'message': 'Bad request.',
-		});
-		return;
-	}
-
 	var id = request.params.id;
 
-	db.query('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [token, id], function(error, rows){
+	// TODO: There should be some validation in here.
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.',
-			});
-			return;
-		}
+	UserService.findCurrentOrDie(request)
 
-		if (rows.length == 0){
-			response.status(401).send({
-				'message': 'Not authorized to access this group.',
-			});
-			return;
-		}
+	// Find the given group.
+	.then(function(user){
+		return GroupService.findByIdForPlayerId(id, user.playerId);
+	})
 
-		// Done.
-		response.send(rows[0]);
-		return;
+	// Response about it.
+	.then(function(group){
+		return response.send(group);
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
 });
 
@@ -2245,9 +2255,9 @@ console.log("App active on localhost:" + port);
 // 	console.log('user is ', user);
 // });
 
-var createUserParameters = {e164formattedMobileNumber: '+12345678910', deviceType: 'ios', deviceToken: '1212121213131313131313', fullname: 'temp'};
+// var updateUserParameters = {deviceType: 'android'};
 
-UserService.create(createUserParameters).then(function(user){
-	console.log(user);
-});
+// UserService.updateForId(623, updateUserParameters).then(function(user){
+// 	console.log(user);
+// });
 
