@@ -480,12 +480,12 @@ var UserService = {
 
 			var queryInsertUser = db.format('insert into users set ?', parameters);
 			
-			return db.query(queryInsertUser)
+			return db.query(queryInsertUser);
+		})
 
-			.then(function(insertUserResult){
-				return UserService.findById(insertUserResult.insertId);
-			});
-
+		//
+		.then(function(insertUserResult){
+			return UserService.findById(insertUserResult.insertId);
 		});
 
 	},
@@ -557,6 +557,22 @@ var PlayerService = {
 
 var GroupService = {
 
+	//
+	findById: function(id){
+
+		var queryGetGroupById = db.format('select * from groups where id = ? limit 1', [id]);
+		
+		return db.query(queryGetGroupById).then(function(groups){
+
+			if (groups.length == 0){
+				return null;
+			}
+
+			var group = groups[0];
+			return group;
+		});
+	},
+
 	// TODO: The query that is inside should be easier.
 	listForPlayerId: function(playerId){
 
@@ -570,8 +586,138 @@ var GroupService = {
 
 		var queryFindGroupByIdForPlayerId = db.format('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [playerId, id]);
 
-		return db.query(queryFindGroupByIdForPlayerId);
+		return db.query(queryFindGroupByIdForPlayerId).then(function(groups){
 
+			if (groups.length == 0){
+				return null;
+			}
+
+			var group = groups[0];
+			return group;
+		});
+
+	},
+
+	//
+	create: function(parameters){
+
+		// Add created at and player id parameters.
+		parameters.createdAt = new Date();
+
+		var queryInsertGroup = db.format('insert into groups set ?', parameters);
+
+		return db.query(queryInsertGroup)
+
+		//
+		.then(function(insertGroupResult){
+
+			// Insert a new player to be an admin in the created group.
+			var groupId = insertGroupResult.insertId;
+
+			var insertGroupPlayerParameters = {groupId: groupId, playerId: parameters.authorId, role: 'admin', joinedAt: new Date()};
+			var queryInsertGroupPlayer = db.format('insert into groupPlayers set ?', insertGroupPlayerParameters);
+
+			//
+			return db.query(queryInsertGroupPlayer);
+		})
+
+		//
+		.then(function(insertGroupPlayerResult){
+
+			return GroupService.findById(insertGroupPlayerResult.insertId);
+
+		});
+	},
+
+	//
+	leaveByIdForPlayerId: function(id, playerId){
+
+		return new Promise(function(resolve, reject){
+
+			// Check if the user is admin or not in that group.
+			var queryGetGroupPlayer = db.format('select * from groupPlayers where groupId = ? and playerId = ?', [id, playerId]);
+
+			// Execute the query.
+			db.query(queryGetGroupPlayer)
+
+			//
+			.then(function(groupPlayers){
+
+				if (groupPlayers.length == 0){
+					return reject(new BadRequestError('Cannot find the specified group.'));
+				}
+
+				// Set the group player.
+				var groupPlayer = groupPlayers[0];
+
+				if (groupPlayer.role == 'admin'){
+					return reject(new BadRequestError('Cannot leave a group when admin you are.'));
+				}
+
+				var updateGroupPlayerParameters = {leftAt: new Date()};
+				var queryUpdateGroupPlayer = db.format('update groupPlayers set ? where groupId = ? and playerId = ?', [updateGroupPlayerParameters, id, playerId]);
+
+				return db.query(queryUpdateGroupPlayer);
+			})
+
+			//
+			.then(function(updateGroupPlayerResult){
+
+				return resolve(updateGroupPlayerResult);
+
+			});
+
+		});
+	},
+
+	//
+	listPlayersByIdForPlayerId: function(id, playerId){
+
+		var queryListPlayersForGroupIdAndPlayerId = db.format('select players.id, players.fullname, groupPlayers.joinedAt from groupPlayers, players where groupPlayers.playerId = players.id and groupPlayers.leftAt is null and groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null)', [playerId, id]);
+
+		return db.query(queryListPlayersForGroupIdAndPlayerId);
+	},
+
+	//
+	deleteByIdForPlayerId: function(id, playerId){
+
+		return new Promise(function(resolve, reject){
+
+			// Check if the user is admin or not in that group.
+			var queryGetGroupPlayer = db.format('select * from groupPlayers where groupId = ? and playerId = ?', [id, playerId]);
+
+			// Execute the query.
+			db.query(queryGetGroupPlayer)
+
+			//
+			.then(function(groupPlayers){
+
+				if (groupPlayers.length == 0){
+					return reject(new BadRequestError('Cannot find the specified group.'));
+				}
+
+				// Set the group player.
+				var groupPlayer = groupPlayers[0];
+
+				if (groupPlayer.role != 'admin'){
+					return reject(new BadRequestError('Cannot delete a group when admin you are not.'));
+				}
+
+				//
+				var updateGroupParameters = {deletedAt: new Date()};
+				var queryUpdateGroup = db.format('update groups set ? where id = ?', [updateGroupParameters, groupPlayer.groupId]);
+				
+				return db.query(queryUpdateGroup);
+			})
+
+			//
+			.then(function(updateGroupPlayerResult){
+
+				return resolve(updateGroupPlayerResult);
+
+			});
+
+		});
 	}
 
 };
@@ -837,9 +983,6 @@ router.get('/groups/:id', authenticatable, function(request, response){
 // POST /groups/add
 router.post('/groups/add', authenticatable, function(request, response){
 
-	// Get the user token.
-	var token = request.get('X-User-Token');
-
 	if (validator.isNull(request.body.name)){
 		response.status(400).send({
 			'message': 'Bad request.'
@@ -847,65 +990,30 @@ router.post('/groups/add', authenticatable, function(request, response){
 		return;
 	}
 
-	// Get the name and have it in a variable.
 	var name = request.body.name;
 
-	db.query('select * from users where token = ?', [token], function(error, rows){
+	//
+	UserService.findCurrentOrDie(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.',
-			});
-			return;
-		}
+	// Add a group.
+	.then(function(user){
+		return GroupService.create({name: name, authorId: user.playerId});
+	})
 
-		console.log('Found ' + rows.length);
+	// Response about it.
+	.then(function(group){
+		return response.status(201).send(group);
+	})
 
-		// Get the user information.
-		var user = rows[0];
-
-		var insertGroupParameters = {name: name, authorId: user.playerId, createdAt: new Date()};
-		db.query('insert into groups set ?', insertGroupParameters, function(error, result){
-
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error.',
-				});
-				return;
-			}
-
-			// Insert a new player to be an admin in the created group.
-			var groupId = result.insertId;
-
-			var insertGroupPlayerParameters = {groupId: groupId, playerId: user.playerId, role: 'admin', joinedAt: new Date()};
-			db.query('insert into groupPlayers set ?', insertGroupPlayerParameters, function(error, result){
-
-				if (error){
-					console.error(error.stack);
-					response.status(500).send({
-						'message': 'Internal server error.',
-					});
-					return;
-				}
-
-				// Done.
-				response.status(201).send({
-					'id': groupId,
-				});
-				return;
-
-			});
-		});
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /groups/:id/leave
 router.get('/groups/:id/leave', authenticatable, function(request, response){
-
-	// Get the user token.
-	var token = request.get('X-User-Token');
 
 	if (!validator.isNumeric(request.params.id)){
 		response.status(400).send({
@@ -916,73 +1024,28 @@ router.get('/groups/:id/leave', authenticatable, function(request, response){
 
 	var id = request.params.id;
 
-	db.query('select * from users where token = ?', [token], function(error, rows){
+	//
+	UserService.findCurrentOrDie(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.',
-			});
-			return;
-		}
+	//
+	.then(function(user){
+		return GroupService.leaveByIdForPlayerId(id, user.playerId);
+	})
 
-		// Set the user.
-		var user = rows[0];
+	// Response about it.
+	.then(function(done){
+		return response.status(204).send();
+	})
 
-		// Check if the user is admin or not in that group.
-		db.query('select * from groupPlayers where groupId = ? and playerId = ?', [id, user.playerId], function(error, rows){
-
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error.',
-				});
-				return;
-			}
-
-			if (rows.length == 0){
-				response.status(400).send({
-					'message': 'Cannot find the specified group.',
-				});
-				return;
-			}
-
-			// Set the group player.
-			var groupPlayer = rows[0];
-
-			if (groupPlayer.role == 'admin'){
-				response.status(400).send({
-					'message': 'Cannot leave a group when admin you are.',
-				});
-				return;
-			}
-
-			// Everything is okay, now you might leave.
-			var updateGroupPlayerParameters = {leftAt: new Date()};
-			db.query('update groupPlayers set ? where groupId = ? and playerId = ?', [updateGroupPlayerParameters, id, user.playerId], function(error, result){
-
-				if (error){
-					console.error(error.stack);
-					response.status(500).send({
-						'message': 'Internal server error.',
-					});
-					return;
-				}
-
-				// Done.
-				response.status(204).send();
-				return;
-
-			});
-		});
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /groups/:id/delete
 router.get('/groups/:id/delete', authenticatable, function(request, response){
-
-	// Get the user token.
-	var token = request.get('X-User-Token');
 
 	if (!validator.isNumeric(request.params.id)){
 		response.status(400).send({
@@ -994,74 +1057,28 @@ router.get('/groups/:id/delete', authenticatable, function(request, response){
 	// Set the id of the group.
 	var id = request.params.id;
 
-	db.query('select * from users where token = ?', [token], function(error, rows){
+	//
+	UserService.findCurrentOrDie(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.',
-			});
-			return;
-		}
+	//
+	.then(function(user){
+		return GroupService.deleteByIdForPlayerId(id, user.playerId);
+	})
 
-		// Set the user.
-		var user = rows[0];
+	// Response about it.
+	.then(function(done){
+		return response.status(204).send();
+	})
 
-		// Check if the user is admin or not in that group.
-		db.query('select * from groupPlayers where groupId = ? and playerId = ?', [id, user.playerId], function(error, rows){
-
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error.',
-				});
-				return;
-			}
-
-			if (rows.length == 0){
-				response.status(400).send({
-					'message': 'Cannot find the specified group.',
-				});
-				return;
-			}
-
-			// Set the group player.
-			var groupPlayer = rows[0];
-
-			if (groupPlayer.role != 'admin'){
-				response.status(400).send({
-					'message': 'Cannot delete a group when admin you are not.',
-				});
-				return;
-			}
-
-			// Everything is okay, now you might delete the group.
-			var updateGroupParameters = {deletedAt: new Date()};
-			db.query('update groups set ? where id = ?', [updateGroupParameters, groupPlayer.groupId], function(error, result){
-
-				if (error){
-					console.error(error.stack);
-					response.status(500).send({
-						'message': 'Internal server error.',
-					});
-					return;
-				}
-
-				// Done.
-				response.status(204).send();
-				return;
-
-			});
-
-		});
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /groups/:groupId/players
 router.get('/groups/:groupId/players', authenticatable, function(request, response){
-
-	// Get the user token.
-	var token = request.get('X-User-Token');
 
 	if (!validator.isNumeric(request.params.groupId)){
 		response.status(400).send({
@@ -1072,20 +1089,24 @@ router.get('/groups/:groupId/players', authenticatable, function(request, respon
 
 	var groupId = request.params.groupId;
 
-	db.query('select players.id, players.fullname, groupPlayers.joinedAt from groupPlayers, players where groupPlayers.playerId = players.id and groupPlayers.leftAt is null and groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null)', [token, groupId], function(error, rows){
+	//
+	UserService.findCurrentOrDie(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.',
-			});
-			return;
-		}
+	//
+	.then(function(user){
+		return GroupService.listPlayersByIdForPlayerId(groupId, user.playerId);
+	})
 
-		// Done.
-		response.send(rows);
-		return;
+	// Response about it.
+	.then(function(players){
+		return response.send(players);
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /groups/:groupId/players/latest
@@ -2261,3 +2282,8 @@ console.log("App active on localhost:" + port);
 // 	console.log(user);
 // });
 
+// GroupService.listPlayersByIdForPlayerId(118, 330)
+
+// .then(function(players){
+// 	console.log(players);
+// });
