@@ -442,7 +442,7 @@ var UserService = {
 	},
 
 	//
-	findByE164formattedMobileNumberOrCreate: function(e164formattedMobileNumber, parameters){
+	findByE164formattedMobileNumberOrCreate: function(e164formattedMobileNumber, parameters, invited){
 		
 		// Find the 
 		return UserService.findByE164formattedMobileNumber(e164formattedMobileNumber)
@@ -451,10 +451,8 @@ var UserService = {
 
 			if (!user){
 
-				// Create the user if it does not exist.
-				// return UserService.create(e164formattedMobileNumber, token, deviceType, deviceToken, fullname);
-				// It must return the user information not just the user id.
-				return UserService.create(parameters);
+				// Create the user if does not exist.
+				return UserService.create(parameters, invited);
 			}
 
 			return user;
@@ -462,7 +460,7 @@ var UserService = {
 	},
 
 	//
-	create: function(parameters){
+	create: function(parameters, invited){
 
 		// Create a player first.
 		return PlayerService.create({fullname: parameters.fullname})
@@ -485,6 +483,13 @@ var UserService = {
 
 		//
 		.then(function(insertUserResult){
+
+			if (invited){
+
+				// TODO: Send an invited SMS for the created player.
+				console.log('Send an invited SMS for the created player.');
+			}
+
 			return UserService.findById(insertUserResult.insertId);
 		});
 
@@ -718,7 +723,27 @@ var GroupService = {
 			});
 
 		});
-	}
+	},
+
+	//
+	addPlayerToId: function(e164formattedMobileNumber, fullname, id){
+
+		//
+		return UserService.findByE164formattedMobileNumberOrCreate(e164formattedMobileNumber, {fullname: fullname}, true)
+
+		//
+		.then(function(user){
+			console.log(user);
+			return GroupService.joinByIdForPlayerId(id, user.playerId);
+		});
+
+	},
+
+	//
+	joinByIdForPlayerId: function(id, playerId){
+		console.log('joinByIdForPlayerId');
+		// return playerGroup;
+	},
 
 };
 
@@ -730,7 +755,6 @@ var FeedbackService = {
 		var queryInsertFeedback = db.format('insert into feedbacks set ?', [insertFeedbackParameters]);
 		return db.query(queryInsertFeedback);
 	}
-
 };
 
 // Check if the user is logged in or response with a not autherized error.
@@ -843,7 +867,7 @@ router.post('/users/secondhandshake', function(request, response){
 	// Find a user by the e164 formatted mobile number or create one.
 	var createUserParameters = {deviceType: request.session.deviceType, deviceToken: request.session.deviceToken, fullname: 'temp'};
 
-	UserService.findByE164formattedMobileNumberOrCreate(e164formattedMobileNumber, createUserParameters)
+	UserService.findByE164formattedMobileNumberOrCreate(e164formattedMobileNumber, createUserParameters, false)
 
 	// Found or created, then update the token.
 	.then(function(user){
@@ -925,7 +949,6 @@ router.post('/users/update', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /groups
@@ -1009,7 +1032,6 @@ router.post('/groups/add', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /groups/:id/leave
@@ -1041,7 +1063,6 @@ router.get('/groups/:id/leave', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /groups/:id/delete
@@ -1074,7 +1095,6 @@ router.get('/groups/:id/delete', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /groups/:groupId/players
@@ -1106,7 +1126,6 @@ router.get('/groups/:groupId/players', authenticatable, function(request, respon
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /groups/:groupId/players/latest
@@ -1117,9 +1136,6 @@ router.get('/groups/:groupId/players/latest', authenticatable, function(request,
 // POST /groups/:groupId/players/add
 router.post('/groups/:groupId/players/add', authenticatable, function(request, response){
 
-	// Get the user token.
-	var token = request.get('X-User-Token');
-
 	if (!validator.isNumeric(request.params.groupId) || validator.isNull(request.body.fullname) || !e164Format.test(request.body.e164formattedMobileNumber)){
 		response.status(400).send({
 			'message': 'Invalid inputs.',
@@ -1127,183 +1143,222 @@ router.post('/groups/:groupId/players/add', authenticatable, function(request, r
 		return;
 	}
 
+	// TODO: Later isPlayerIdAdminForId(playerId, id).
+	// TODO: Later isPlayerIdInId(playerId, id).
+
 	// Define variables to be used.
 	var groupId = request.params.groupId;
 	var fullname = request.body.fullname;
 	var e164formattedMobileNumber = request.body.e164formattedMobileNumber;
 
-	// Check if the user is admin.
-	db.query('select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [token, groupId], function(error, rows){
+	// 1. findCurrentOrDie.
+	// 2. checkIsPlayerIdAdminForIdOrDie.
+	// 3. findByE164formattedMobileNumberOrCreate.
+	// 4. joinByIdForPlayerId.
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error 1.',
-			});
-			return;
-		}
+	// Raises
 
-		if (rows.length == 0){
-			response.status(401).send({
-				'message': 'Cannot add a player when not admin you are.',
-			});
-			return;
-		}
+	// 1. Cannot add a player when not admin you are.
+	// 2. Player is already in that group.
+	// 3. Cannot add an inactive player to the group.
 
-		// Now, check if the player is not in the desired group.
-		db.query('select players.fullname, groupPlayers.playerId, groupPlayers.leftAt from players, users, groupPlayers where users.playerId = groupPlayers.playerId and users.playerId = players.id and groupPlayers.groupId = ? and users.e164formattedMobileNumber = ?', [groupId, e164formattedMobileNumber], function(error, rows){
+	//
+	UserService.findCurrentOrDie(request)
 
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error 2.',
-				});
-				return;
-			}
+	//
+	.then(function(user){
+		return GroupService.checkIsPlayerIdAdminForIdOrDie(user.playerId, groupId);
+	})
 
-			if (rows.length > 0){
+	//
+	.then(function(){
+		return GroupService.addPlayerToId(e164formattedMobileNumber, fullname, groupId);
+	})
 
-				// Get the group player.
-				var groupPlayer = rows[0];
+	// TODO: It has also joinedAt.
+	// Response about it.
+	.then(function(playerGroup){
+		return response.status(201).send(playerGroup);
+	})
 
-				if (validator.isNull(groupPlayer.leftAt)){
-					response.status(400).send({
-						'message': 'Player is already in that group.'
-					});
-					return;
-				}
-
-				var updateGroupPlayerParameters = {joinedAt: new Date(), leftAt: null};
-				db.query('update groupPlayers set ? where groupId = ? and playerId = ?', [updateGroupPlayerParameters, groupId, groupPlayer.playerId], function(error, result){
-
-					if (error){
-						console.error(error.stack);
-						response.status(500).send({
-							'message': 'Internal server error 3.',
-						});
-						return;
-					}
-
-					response.status(201).send({
-						id: groupPlayer.playerId,
-						fullname: groupPlayer.fullname,
-						joinedAt: updateGroupPlayerParameters.joinedAt,
-					});
-					return;
-
-				});
-				return;
-			}
-
-			// Do insert a new player to the specific group.
-			db.query('select players.fullname, users.* from players, users where users.playerId = players.id and users.e164formattedMobileNumber = ?', [e164formattedMobileNumber], function(error, rows){
-
-				if (error){
-					console.error(error.stack);
-					response.status(500).send({
-						'message': 'Internal server error 4.',
-					});
-					return;
-				}
-
-				if (rows.length > 0){
-					
-					var playerUser = rows[0];
-
-					if (!validator.isNull(playerUser.deletedAt)){
-						response.status(401).send({
-							'message': 'Cannot add an inactive player to the group.',
-						});
-						return;
-					}
-
-					// Insert the player in the group.
-					var insertGroupPlayerParameters = {playerId: playerUser.playerId, groupId: groupId, role: 'member', joinedAt: new Date()};
-					db.query('insert into groupPlayers set ?', [insertGroupPlayerParameters], function(error, result){
-
-						if (error){
-							console.error(error.stack);
-							response.status(500).send({
-								'message': 'Internal server error 5.',
-							});
-							return;
-						}
-
-						response.status(201).send({
-							id: result.insertId,
-							fullname: fullname,
-							joinedAt: insertGroupPlayerParameters.joinedAt,
-						});
-
-						return;
-					});
-
-					return;
-				}
-
-				// Insert a player.
-				var insertPlayerParameters = {fullname: fullname};
-				db.query('insert into players set ?', [insertPlayerParameters], function(error, result){
-
-					if (error){
-						console.error(error.stack);
-						response.status(500).send({
-							'message': 'Internal server error 6.',
-						});
-						return;
-					}
-
-					var insertUserParameters = {playerId: result.insertId, e164formattedMobileNumber: e164formattedMobileNumber, createdAt: new Date()};
-
-					// Insert a user.
-					db.query('insert into users set ?', [insertUserParameters], function(error, result){
-
-						if (error){
-							console.error(error.stack);
-							response.status(500).send({
-								'message': 'Internal server error 7.',
-							});
-							return;
-						}
-
-						// Insert a relation.
-						var insertGroupPlayerParameters = {playerId: insertUserParameters.playerId, groupId: groupId, role: 'member', joinedAt: new Date()};
-
-						db.query('insert into groupPlayers set ?', [insertGroupPlayerParameters, groupId], function(error, result){
-
-							if (error){
-								console.error(error.stack);
-								response.status(500).send({
-									'message': 'Internal server error 8.',
-								});
-								return;
-							}
-
-							// Done.
-							response.status(201).send({
-								id: result.insertId,
-								fullname: fullname,
-								joinedAt: insertGroupPlayerParameters.joinedAt,
-							});
-
-							// TODO: Notify the new player.
-							// twilio.messages.create({ 
-							// 	to: e164formattedMobileNumber, 
-							// 	from: nconf.get('twilioNumber'), 
-							// 	body: "تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من المتجر.",   
-							// }, function(error, message){ 
-							// 	//console.log(message.sid); 
-							// });
-
-							SMS.send(e164formattedMobileNumber, "تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من أبل ستور " + nconf.get('appleStoreUrl') + " أو قوقل بلاي " + nconf.get('googlePlayUrl'));
-
-							return;
-						});
-					});
-				});
-			});
-		});
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
+	// // Check if the user is admin.
+	// db.query('select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [token, groupId], function(error, rows){
+
+	// 	if (error){
+	// 		console.error(error.stack);
+	// 		response.status(500).send({
+	// 			'message': 'Internal server error 1.',
+	// 		});
+	// 		return;
+	// 	}
+
+	// 	if (rows.length == 0){
+	// 		response.status(401).send({
+	// 			'message': 'Cannot add a player when not admin you are.',
+	// 		});
+	// 		return;
+	// 	}
+
+	// 	// Now, check if the player is not in the desired group.
+	// 	db.query('select players.fullname, groupPlayers.playerId, groupPlayers.leftAt from players, users, groupPlayers where users.playerId = groupPlayers.playerId and users.playerId = players.id and groupPlayers.groupId = ? and users.e164formattedMobileNumber = ?', [groupId, e164formattedMobileNumber], function(error, rows){
+
+	// 		if (error){
+	// 			console.error(error.stack);
+	// 			response.status(500).send({
+	// 				'message': 'Internal server error 2.',
+	// 			});
+	// 			return;
+	// 		}
+
+	// 		if (rows.length > 0){
+
+	// 			// Get the group player.
+	// 			var groupPlayer = rows[0];
+
+	// 			if (validator.isNull(groupPlayer.leftAt)){
+	// 				response.status(400).send({
+	// 					'message': 'Player is already in that group.'
+	// 				});
+	// 				return;
+	// 			}
+
+	// 			var updateGroupPlayerParameters = {joinedAt: new Date(), leftAt: null};
+	// 			db.query('update groupPlayers set ? where groupId = ? and playerId = ?', [updateGroupPlayerParameters, groupId, groupPlayer.playerId], function(error, result){
+
+	// 				if (error){
+	// 					console.error(error.stack);
+	// 					response.status(500).send({
+	// 						'message': 'Internal server error 3.',
+	// 					});
+	// 					return;
+	// 				}
+
+	// 				response.status(201).send({
+	// 					id: groupPlayer.playerId,
+	// 					fullname: groupPlayer.fullname,
+	// 					joinedAt: updateGroupPlayerParameters.joinedAt,
+	// 				});
+	// 				return;
+
+	// 			});
+	// 			return;
+	// 		}
+
+	// 		// Do insert a new player to the specific group.
+	// 		db.query('select players.fullname, users.* from players, users where users.playerId = players.id and users.e164formattedMobileNumber = ?', [e164formattedMobileNumber], function(error, rows){
+
+	// 			if (error){
+	// 				console.error(error.stack);
+	// 				response.status(500).send({
+	// 					'message': 'Internal server error 4.',
+	// 				});
+	// 				return;
+	// 			}
+
+	// 			if (rows.length > 0){
+					
+	// 				var playerUser = rows[0];
+
+	// 				if (!validator.isNull(playerUser.deletedAt)){
+	// 					response.status(401).send({
+	// 						'message': 'Cannot add an inactive player to the group.',
+	// 					});
+	// 					return;
+	// 				}
+
+	// 				// Insert the player in the group.
+	// 				var insertGroupPlayerParameters = {playerId: playerUser.playerId, groupId: groupId, role: 'member', joinedAt: new Date()};
+	// 				db.query('insert into groupPlayers set ?', [insertGroupPlayerParameters], function(error, result){
+
+	// 					if (error){
+	// 						console.error(error.stack);
+	// 						response.status(500).send({
+	// 							'message': 'Internal server error 5.',
+	// 						});
+	// 						return;
+	// 					}
+
+	// 					response.status(201).send({
+	// 						id: result.insertId,
+	// 						fullname: fullname,
+	// 						joinedAt: insertGroupPlayerParameters.joinedAt,
+	// 					});
+
+	// 					return;
+	// 				});
+
+	// 				return;
+	// 			}
+
+	// 			// Insert a player.
+	// 			var insertPlayerParameters = {fullname: fullname};
+	// 			db.query('insert into players set ?', [insertPlayerParameters], function(error, result){
+
+	// 				if (error){
+	// 					console.error(error.stack);
+	// 					response.status(500).send({
+	// 						'message': 'Internal server error 6.',
+	// 					});
+	// 					return;
+	// 				}
+
+	// 				var insertUserParameters = {playerId: result.insertId, e164formattedMobileNumber: e164formattedMobileNumber, createdAt: new Date()};
+
+	// 				// Insert a user.
+	// 				db.query('insert into users set ?', [insertUserParameters], function(error, result){
+
+	// 					if (error){
+	// 						console.error(error.stack);
+	// 						response.status(500).send({
+	// 							'message': 'Internal server error 7.',
+	// 						});
+	// 						return;
+	// 					}
+
+	// 					// Insert a relation.
+	// 					var insertGroupPlayerParameters = {playerId: insertUserParameters.playerId, groupId: groupId, role: 'member', joinedAt: new Date()};
+
+	// 					db.query('insert into groupPlayers set ?', [insertGroupPlayerParameters, groupId], function(error, result){
+
+	// 						if (error){
+	// 							console.error(error.stack);
+	// 							response.status(500).send({
+	// 								'message': 'Internal server error 8.',
+	// 							});
+	// 							return;
+	// 						}
+
+	// 						// Done.
+	// 						response.status(201).send({
+	// 							id: result.insertId,
+	// 							fullname: fullname,
+	// 							joinedAt: insertGroupPlayerParameters.joinedAt,
+	// 						});
+
+	// 						// TODO: Notify the new player.
+	// 						// twilio.messages.create({ 
+	// 						// 	to: e164formattedMobileNumber, 
+	// 						// 	from: nconf.get('twilioNumber'), 
+	// 						// 	body: "تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من المتجر.",   
+	// 						// }, function(error, message){ 
+	// 						// 	//console.log(message.sid); 
+	// 						// });
+
+	// 						SMS.send(e164formattedMobileNumber, "تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من أبل ستور " + nconf.get('appleStoreUrl') + " أو قوقل بلاي " + nconf.get('googlePlayUrl'));
+
+	// 						return;
+	// 					});
+	// 				});
+	// 			});
+	// 		});
+	// 	});
+	// });
+
 });
 
 // GET /groups/:groupId/players/:id/delete
@@ -2251,7 +2306,6 @@ router.post('/feedbacks/add', function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 
@@ -2287,3 +2341,5 @@ console.log("App active on localhost:" + port);
 // .then(function(players){
 // 	console.log(players);
 // });
+
+GroupService.addPlayerToId('+', 'Hussam Al-Zughaibi', 1);
