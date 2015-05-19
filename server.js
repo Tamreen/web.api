@@ -489,8 +489,8 @@ var UserService = {
 
 			if (invited){
 
-				// TODO: Send an invited SMS for the created player.
-				console.log('Send an invited SMS for the created player.');
+				// Send an invited SMS for the created player.
+				SMS.send(parameters.e164formattedMobileNumber, 'تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من أبل ستور ' + nconf.get('appleStoreUrl') + " أو قوقل بلاي " + nconf.get('googlePlayUrl'));
 			}
 
 			return UserService.findById(insertUserResult.insertId);
@@ -2286,7 +2286,7 @@ if (nconf.get('environment') == 'development'){
 
 console.log("App active on localhost:" + port);
 
-// UserService.findByE164formattedMobileNumber('+966553572').then(function(user){
+// UserService.findByE164formattedMobileNumber('+1').then(function(user){
 // 	console.log('user is ', user);
 // });
 
@@ -2304,4 +2304,6 @@ console.log("App active on localhost:" + port);
 
 // GroupService.checkIsPlayerIdAdminForIdOrDie(3, 6);
 
-GroupService.addPlayerToId('+', 'Hussam Al-Zughaibi', 1);
+// GroupService.addPlayerToId('+1', 'Hussam Al-Zughaibi', 1).then(function(playerGroup){
+// 	console.log(playerGroup);
+// });
