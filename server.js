@@ -451,6 +451,9 @@ var UserService = {
 
 			if (!user){
 
+				// 
+				parameters.e164formattedMobileNumber = e164formattedMobileNumber;
+
 				// Create the user if does not exist.
 				return UserService.create(parameters, invited);
 			}
@@ -733,20 +736,165 @@ var GroupService = {
 
 		//
 		.then(function(user){
-			console.log(user);
+
+			if (!validator.isNull(user.deletedAt)){
+				throw new BadRequestError('Cannot add an inactive player to the group.');
+			}
+
 			return GroupService.joinByIdForPlayerId(id, user.playerId);
+		});
+	},
+
+	//
+	joinByIdForPlayerId: function(id, playerId){
+
+		//
+		return GroupPlayerService.findByGroupIdAndPlayerId(id, playerId)
+
+		//
+		.then(function(groupPlayer){
+
+			// Check if the player id never left the group id.
+			if (groupPlayer && validator.isNull(groupPlayer.leftAt)){
+				throw new BadRequestError('Player is already in that group.');
+			}
+
+			if (!groupPlayer){
+
+				// Create a new one and return.
+				return GroupPlayerService.create({groupId: id, playerId: playerId, role: 'member'});
+			}
+
+			return groupPlayer;
+		})
+
+		.then(function(groupPlayer){
+
+			//
+			var updateGroupPlayerParameters = {joinedAt: new Date(), leftAt: null};
+
+			return GroupPlayerService.updateForId(updateGroupPlayerParameters, groupPlayer.id);
+		})
+
+		.then(function(groupPlayer){
+
+			return GroupPlayerService.findPlayerGroupById(groupPlayer.id);
+
+		});
+	},
+
+	checkIsPlayerIdAdminForIdOrDie: function(playerId, id){
+
+		return new Promise(function(resolve, reject){
+
+			// Check if the user is admin.
+			var queryGetGroupPlayer = db.format('select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [playerId, id])
+
+			//
+			db.query(queryGetGroupPlayer)
+
+			//
+			.then(function(groupPlayers){
+
+				if (groupPlayers.length == 0){
+					return reject(new BadRequestError('Cannot add a player when not admin you are.'));
+				}
+
+				// TODO: Propably update this one.
+				return resolve(groupPlayers);
+			});
+		});
+	},
+
+};
+
+//
+var GroupPlayerService = {
+
+	//
+	findById: function(id){
+
+		var queryGetGroupPlayerById = db.format('select * from groupPlayers where id = ? limit 1', [id]);
+		
+		return db.query(queryGetGroupPlayerById).then(function(groupPlayers){
+
+			if (groupPlayers.length == 0){
+				return null;
+			}
+
+			var groupPlayer = groupPlayers[0];
+			return groupPlayer;
+		});
+	},
+
+	//
+	findByGroupIdAndPlayerId: function(groupId, playerId){
+
+		var queryFindGroupPlayer = db.format('select * from groupPlayers where groupId = ? and playerId = ? limit 1', [groupId, playerId]);
+
+		return db.query(queryFindGroupPlayer)
+
+		//
+		.then(function(groupPlayers){
+
+			if (groupPlayers.length == 0){
+				return null;
+			}
+
+			var groupPlayer = groupPlayers[0];
+			return groupPlayer;
+		});
+	},
+
+	//
+	findPlayerGroupById: function(id){
+
+		var queryFindPlayerGroup = db.format('select fullname, groupPlayers.* from players, groupPlayers where groupPlayers.playerId = players.id and groupPlayers.id = ? limit 1', [id]);
+
+		return db.query(queryFindPlayerGroup)
+
+		.then(function(playerGroups){
+
+			if (playerGroups.length == 0){
+				return null;
+			}
+
+			var playerGroup = playerGroups[0];
+			return playerGroup;
 		});
 
 	},
 
 	//
-	joinByIdForPlayerId: function(id, playerId){
-		console.log('joinByIdForPlayerId');
-		// return playerGroup;
+	create: function(parameters){
+
+		parameters.joinedAt = new Date();
+
+		var queryInsertGroupPlayer = db.format('insert into groupPlayers set ?', parameters);
+
+		return db.query(queryInsertGroupPlayer)
+
+		//
+		.then(function(insertGroupPlayerResult){
+			return GroupPlayerService.findById(insertGroupPlayerResult.insertId);
+		});
+	},
+
+	//
+	updateForId: function(parameters, id){
+
+		var queryUpdateGroupPlayerById = db.format('update groupPlayers set ? where id = ?', [parameters, id]);
+		
+		return db.query(queryUpdateGroupPlayerById)
+
+		.then(function(updateGroupPlayerByIdResult){
+			return GroupPlayerService.findById(id);
+		});
 	},
 
 };
 
+//
 var FeedbackService = {
 
 	send: function(content, authorId){
@@ -1143,24 +1291,10 @@ router.post('/groups/:groupId/players/add', authenticatable, function(request, r
 		return;
 	}
 
-	// TODO: Later isPlayerIdAdminForId(playerId, id).
-	// TODO: Later isPlayerIdInId(playerId, id).
-
 	// Define variables to be used.
 	var groupId = request.params.groupId;
 	var fullname = request.body.fullname;
 	var e164formattedMobileNumber = request.body.e164formattedMobileNumber;
-
-	// 1. findCurrentOrDie.
-	// 2. checkIsPlayerIdAdminForIdOrDie.
-	// 3. findByE164formattedMobileNumberOrCreate.
-	// 4. joinByIdForPlayerId.
-
-	// Raises
-
-	// 1. Cannot add a player when not admin you are.
-	// 2. Player is already in that group.
-	// 3. Cannot add an inactive player to the group.
 
 	//
 	UserService.findCurrentOrDie(request)
@@ -1175,7 +1309,6 @@ router.post('/groups/:groupId/players/add', authenticatable, function(request, r
 		return GroupService.addPlayerToId(e164formattedMobileNumber, fullname, groupId);
 	})
 
-	// TODO: It has also joinedAt.
 	// Response about it.
 	.then(function(playerGroup){
 		return response.status(201).send(playerGroup);
@@ -1185,179 +1318,6 @@ router.post('/groups/:groupId/players/add', authenticatable, function(request, r
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
-	// // Check if the user is admin.
-	// db.query('select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [token, groupId], function(error, rows){
-
-	// 	if (error){
-	// 		console.error(error.stack);
-	// 		response.status(500).send({
-	// 			'message': 'Internal server error 1.',
-	// 		});
-	// 		return;
-	// 	}
-
-	// 	if (rows.length == 0){
-	// 		response.status(401).send({
-	// 			'message': 'Cannot add a player when not admin you are.',
-	// 		});
-	// 		return;
-	// 	}
-
-	// 	// Now, check if the player is not in the desired group.
-	// 	db.query('select players.fullname, groupPlayers.playerId, groupPlayers.leftAt from players, users, groupPlayers where users.playerId = groupPlayers.playerId and users.playerId = players.id and groupPlayers.groupId = ? and users.e164formattedMobileNumber = ?', [groupId, e164formattedMobileNumber], function(error, rows){
-
-	// 		if (error){
-	// 			console.error(error.stack);
-	// 			response.status(500).send({
-	// 				'message': 'Internal server error 2.',
-	// 			});
-	// 			return;
-	// 		}
-
-	// 		if (rows.length > 0){
-
-	// 			// Get the group player.
-	// 			var groupPlayer = rows[0];
-
-	// 			if (validator.isNull(groupPlayer.leftAt)){
-	// 				response.status(400).send({
-	// 					'message': 'Player is already in that group.'
-	// 				});
-	// 				return;
-	// 			}
-
-	// 			var updateGroupPlayerParameters = {joinedAt: new Date(), leftAt: null};
-	// 			db.query('update groupPlayers set ? where groupId = ? and playerId = ?', [updateGroupPlayerParameters, groupId, groupPlayer.playerId], function(error, result){
-
-	// 				if (error){
-	// 					console.error(error.stack);
-	// 					response.status(500).send({
-	// 						'message': 'Internal server error 3.',
-	// 					});
-	// 					return;
-	// 				}
-
-	// 				response.status(201).send({
-	// 					id: groupPlayer.playerId,
-	// 					fullname: groupPlayer.fullname,
-	// 					joinedAt: updateGroupPlayerParameters.joinedAt,
-	// 				});
-	// 				return;
-
-	// 			});
-	// 			return;
-	// 		}
-
-	// 		// Do insert a new player to the specific group.
-	// 		db.query('select players.fullname, users.* from players, users where users.playerId = players.id and users.e164formattedMobileNumber = ?', [e164formattedMobileNumber], function(error, rows){
-
-	// 			if (error){
-	// 				console.error(error.stack);
-	// 				response.status(500).send({
-	// 					'message': 'Internal server error 4.',
-	// 				});
-	// 				return;
-	// 			}
-
-	// 			if (rows.length > 0){
-					
-	// 				var playerUser = rows[0];
-
-	// 				if (!validator.isNull(playerUser.deletedAt)){
-	// 					response.status(401).send({
-	// 						'message': 'Cannot add an inactive player to the group.',
-	// 					});
-	// 					return;
-	// 				}
-
-	// 				// Insert the player in the group.
-	// 				var insertGroupPlayerParameters = {playerId: playerUser.playerId, groupId: groupId, role: 'member', joinedAt: new Date()};
-	// 				db.query('insert into groupPlayers set ?', [insertGroupPlayerParameters], function(error, result){
-
-	// 					if (error){
-	// 						console.error(error.stack);
-	// 						response.status(500).send({
-	// 							'message': 'Internal server error 5.',
-	// 						});
-	// 						return;
-	// 					}
-
-	// 					response.status(201).send({
-	// 						id: result.insertId,
-	// 						fullname: fullname,
-	// 						joinedAt: insertGroupPlayerParameters.joinedAt,
-	// 					});
-
-	// 					return;
-	// 				});
-
-	// 				return;
-	// 			}
-
-	// 			// Insert a player.
-	// 			var insertPlayerParameters = {fullname: fullname};
-	// 			db.query('insert into players set ?', [insertPlayerParameters], function(error, result){
-
-	// 				if (error){
-	// 					console.error(error.stack);
-	// 					response.status(500).send({
-	// 						'message': 'Internal server error 6.',
-	// 					});
-	// 					return;
-	// 				}
-
-	// 				var insertUserParameters = {playerId: result.insertId, e164formattedMobileNumber: e164formattedMobileNumber, createdAt: new Date()};
-
-	// 				// Insert a user.
-	// 				db.query('insert into users set ?', [insertUserParameters], function(error, result){
-
-	// 					if (error){
-	// 						console.error(error.stack);
-	// 						response.status(500).send({
-	// 							'message': 'Internal server error 7.',
-	// 						});
-	// 						return;
-	// 					}
-
-	// 					// Insert a relation.
-	// 					var insertGroupPlayerParameters = {playerId: insertUserParameters.playerId, groupId: groupId, role: 'member', joinedAt: new Date()};
-
-	// 					db.query('insert into groupPlayers set ?', [insertGroupPlayerParameters, groupId], function(error, result){
-
-	// 						if (error){
-	// 							console.error(error.stack);
-	// 							response.status(500).send({
-	// 								'message': 'Internal server error 8.',
-	// 							});
-	// 							return;
-	// 						}
-
-	// 						// Done.
-	// 						response.status(201).send({
-	// 							id: result.insertId,
-	// 							fullname: fullname,
-	// 							joinedAt: insertGroupPlayerParameters.joinedAt,
-	// 						});
-
-	// 						// TODO: Notify the new player.
-	// 						// twilio.messages.create({ 
-	// 						// 	to: e164formattedMobileNumber, 
-	// 						// 	from: nconf.get('twilioNumber'), 
-	// 						// 	body: "تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من المتجر.",   
-	// 						// }, function(error, message){ 
-	// 						// 	//console.log(message.sid); 
-	// 						// });
-
-	// 						SMS.send(e164formattedMobileNumber, "تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من أبل ستور " + nconf.get('appleStoreUrl') + " أو قوقل بلاي " + nconf.get('googlePlayUrl'));
-
-	// 						return;
-	// 					});
-	// 				});
-	// 			});
-	// 		});
-	// 	});
-	// });
 
 });
 
@@ -2341,5 +2301,7 @@ console.log("App active on localhost:" + port);
 // .then(function(players){
 // 	console.log(players);
 // });
+
+// GroupService.checkIsPlayerIdAdminForIdOrDie(3, 6);
 
 GroupService.addPlayerToId('+', 'Hussam Al-Zughaibi', 1);
