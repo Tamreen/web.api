@@ -895,6 +895,19 @@ var GroupPlayerService = {
 };
 
 //
+var TrainingService = {
+
+	listForGroupIdAndPlayerId: function(groupId, playerId){
+
+		var queryListTrainingsForGroupIdAndPlayerId = db.format('select userTrainings.id, userTrainings.name, userTrainings.status, (select count(id) from activityPlayers where playerId = userTrainings.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId = userTrainings.id)) as activitiesCount from (select trainings.*, users.playerId as playerId from groupPlayers, users, groups, trainings where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null and trainings.groupId = groups.id) as userTrainings order by coalesce(userTrainings.modifiedAt, userTrainings.createdAt) desc', [playerId, groupId]);
+
+		return db.query(queryListTrainingsForGroupIdAndPlayerId);
+
+	},
+
+};
+
+//
 var FeedbackService = {
 
 	send: function(content, authorId){
@@ -902,7 +915,7 @@ var FeedbackService = {
 		var insertFeedbackParameters = {authorId: authorId, content: content, createdAt: new Date()};
 		var queryInsertFeedback = db.format('insert into feedbacks set ?', [insertFeedbackParameters]);
 		return db.query(queryInsertFeedback);
-	}
+	},
 };
 
 // Check if the user is logged in or response with a not autherized error.
@@ -1378,9 +1391,6 @@ router.get('/groups/:groupId/players/:id/delete', authenticatable, function(requ
 // GET /groups/:groupId/trainings
 router.get('/groups/:groupId/trainings', authenticatable, function(request, response){
 
-	// Get the user token.
-	var token = request.get('X-User-Token');
-
 	if (!validator.isNumeric(request.params.groupId)){
 		response.status(400).send({
 			'message': 'Cannot understand the value of group id.',
@@ -1390,19 +1400,24 @@ router.get('/groups/:groupId/trainings', authenticatable, function(request, resp
 
 	var groupId = request.params.groupId;
 
-	db.query('select userTrainings.id, userTrainings.name, userTrainings.status, (select count(id) from activityPlayers where playerId = userTrainings.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId = userTrainings.id)) as activitiesCount from (select trainings.*, users.playerId as playerId from groupPlayers, users, groups, trainings where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null and trainings.groupId = groups.id) as userTrainings order by coalesce(userTrainings.modifiedAt, userTrainings.createdAt) desc', [token, groupId], function(error, rows){
+	//
+	UserService.findCurrentOrDie(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.',
-			});
-			return;
-		}
+	//
+	.then(function(user){
+		return TrainingService.listForGroupIdAndPlayerId(groupId, user.playerId);
+	})
 
-		response.send(rows);
-		return;
+	// Response about it.
+	.then(function(trainings){
+		return response.send(trainings);
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /groups/:groupId/trainings/latest
@@ -2306,4 +2321,8 @@ console.log("App active on localhost:" + port);
 
 // GroupService.addPlayerToId('+1', 'Hussam Al-Zughaibi', 1).then(function(playerGroup){
 // 	console.log(playerGroup);
+// });
+
+// TrainingService.listForGroupIdAndPlayerId(104, 1).then(function(trainings){ // 104 => 
+// 	console.log(trainings);
 // });
