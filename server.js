@@ -582,6 +582,7 @@ var GroupService = {
 	},
 
 	// TODO: The query that is inside should be easier.
+	// TODO: This should be ordered by latest activities.
 	listForPlayerId: function(playerId){
 
 		var queryListGroupsForPlayerId = db.format('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [playerId]);
@@ -806,6 +807,30 @@ var GroupService = {
 		});
 	},
 
+	//
+	deletePlayerIdByAdminPlayerIdInId: function(playerId, adminPlayerId, id){
+
+		var queryFindGroupPlayer = db.format('select groupPlayers.id from groupPlayers where groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\') and groupPlayers.playerId = ? and groupPlayers.role <> \'admin\' and groupPlayers.leftAt is null', [adminPlayerId, id, playerId]);
+
+		//
+		return db.query(queryFindGroupPlayer)
+
+		//
+		.then(function(groupPlayers){
+
+			if (groupPlayers.length == 0){
+				throw new BadRequestError('Cannot find the specified group or player.');
+			}
+
+			//
+			var groupPlayer = groupPlayers[0];
+
+			//
+			var updateGroupPlayerParameters = {leftAt: new Date()};
+			return GroupPlayerService.updateForId(updateGroupPlayerParameters, groupPlayer.id);
+		});
+	},
+
 };
 
 //
@@ -891,7 +916,6 @@ var GroupPlayerService = {
 			return GroupPlayerService.findById(id);
 		});
 	},
-
 };
 
 //
@@ -1331,14 +1355,10 @@ router.post('/groups/:groupId/players/add', authenticatable, function(request, r
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /groups/:groupId/players/:id/delete
 router.get('/groups/:groupId/players/:id/delete', authenticatable, function(request, response){
-
-	// Get the user token.
-	var token = request.get('X-User-Token');
 
 	if (!validator.isNumeric(request.params.groupId) || !validator.isNumeric(request.params.id)){
 		response.status(400).send({
@@ -1351,40 +1371,22 @@ router.get('/groups/:groupId/players/:id/delete', authenticatable, function(requ
 	var groupId = request.params.groupId; 
 	var id = request.params.id;
 
-	// Check if the user is an admin.
-	db.query('select groupPlayers.playerId from groupPlayers where groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\') and groupPlayers.playerId = ? and groupPlayers.role <> \'admin\'', [token, groupId, id], function(error, rows){
+	//
+	UserService.findCurrentOrDie(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error 1.',
-			});
-			return;
-		}
+	//
+	.then(function(user){
+		return GroupService.deletePlayerIdByAdminPlayerIdInId(id, user.playerId, groupId);
+	})
 
-		if (rows.length == 0){
-			response.status(400).send({
-				'message': 'Cannot find the specified group or player.',
-			});
-			return;
-		}
+	// Response about it.
+	.then(function(groupPlayer){
+		return response.status(204).send();
+	})
 
-		var updateGroupPlayerParameters = {leftAt: new Date()};
-		db.query('update groupPlayers set ? where groupId = ? and playerId = ?', [updateGroupPlayerParameters, groupId, id], function(error, result){
-
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error 1.',
-				});
-				return;
-			}
-
-			// Done.
-			response.status(204).send();
-			return;
-		});
-
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
 });
 
@@ -1398,6 +1400,7 @@ router.get('/groups/:groupId/trainings', authenticatable, function(request, resp
 		return;
 	}
 
+	//
 	var groupId = request.params.groupId;
 
 	//
@@ -1417,7 +1420,6 @@ router.get('/groups/:groupId/trainings', authenticatable, function(request, resp
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /groups/:groupId/trainings/latest
@@ -2326,3 +2328,16 @@ console.log('App active on localhost:' + port);
 // TrainingService.listForGroupIdAndPlayerId(104, 1).then(function(trainings){ // 104 => 
 // 	console.log(trainings);
 // });
+
+// GroupService.deletePlayerIdByAdminPlayerIdInId(1, 3, 1)
+
+// .then(function(groupPlayer){
+// 	console.log(groupPlayer);
+// });
+
+// GroupService.listForPlayerId(1)
+
+// .then(function(groups){
+// 	console.log(groups);
+// });
+
