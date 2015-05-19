@@ -5,7 +5,7 @@ var using = Promise.using;
 var fs = require('fs');
 var mysql = require('mysql');
 
-var express = require("express");
+var express = require('express');
 var session = require('express-session');
 var bodyParser = require('body-parser');
 
@@ -297,8 +297,8 @@ var activity = {
 
 // Access control allow.
 app.use(function(req, res, next) {
-	res.header("Access-Control-Allow-Origin", "*");
-	res.header("Access-Control-Allow-Headers", "X-Requested-With");
+	res.header('Access-Control-Allow-Origin', '*');
+	res.header('Access-Control-Allow-Headers', 'X-Requested-With');
 	next();
 });
 
@@ -490,7 +490,7 @@ var UserService = {
 			if (invited){
 
 				// Send an invited SMS for the created player.
-				SMS.send(parameters.e164formattedMobileNumber, 'تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من أبل ستور ' + nconf.get('appleStoreUrl') + " أو قوقل بلاي " + nconf.get('googlePlayUrl'));
+				SMS.send(parameters.e164formattedMobileNumber, 'تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من أبل ستور ' + nconf.get('appleStoreUrl') + ' أو قوقل بلاي ' + nconf.get('googlePlayUrl'));
 			}
 
 			return UserService.findById(insertUserResult.insertId);
@@ -1002,7 +1002,7 @@ router.post('/users/firsthandshake', function(request, response){
 	response.status(204).send('/users/firsthandshake');
 
 	// Send the SMS containing the temporary code.
-	return SMS.send(e164formattedMobileNumber, "تطبيق تمرين - كلمة المرور المؤقتة " + code);
+	return SMS.send(e164formattedMobileNumber, 'تطبيق تمرين - كلمة المرور المؤقتة ' + code);
 });
 
 // POST /users/secondhandshake
@@ -2299,7 +2299,7 @@ if (nconf.get('environment') == 'development'){
 	https.createServer(sslOptions, app).listen(port);
 }
 
-console.log("App active on localhost:" + port);
+console.log('App active on localhost:' + port);
 
 // UserService.findByE164formattedMobileNumber('+1').then(function(user){
 // 	console.log('user is ', user);
