@@ -113,6 +113,9 @@ var e164Format = /^\+[0-9]{8,15}$/;
 var app = express();
 var port = 4000;
 
+// Set the locale of the training.
+moment.locale('ar-sa');
+
 // This should be a service.
 var SMS = {
 	send: function(to, message){
@@ -604,7 +607,6 @@ var GroupService = {
 			var group = groups[0];
 			return group;
 		});
-
 	},
 
 	//
@@ -789,7 +791,7 @@ var GroupService = {
 		return new Promise(function(resolve, reject){
 
 			// Check if the user is admin.
-			var queryGetGroupPlayer = db.format('select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [playerId, id])
+			var queryGetGroupPlayer = db.format('select groupPlayers.* from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [playerId, id])
 
 			//
 			db.query(queryGetGroupPlayer)
@@ -798,11 +800,11 @@ var GroupService = {
 			.then(function(groupPlayers){
 
 				if (groupPlayers.length == 0){
-					return reject(new BadRequestError('Cannot add a player when not admin you are.'));
+					return reject(new BadRequestError('Not authorized to access this method.'));
 				}
 
-				// TODO: Propably update this one.
-				return resolve(groupPlayers);
+				var groupPlayer = groupPlayers[0];
+				return resolve(groupPlayer);
 			});
 		});
 	},
@@ -921,12 +923,169 @@ var GroupPlayerService = {
 //
 var TrainingService = {
 
+	addGroupIdPlayersForPlayerIdToId: function(groupId, playerId, id){
+
+		return GroupService.listPlayersByIdForPlayerId(groupId, playerId)
+
+		.then(function(players){
+
+			return Promise.each(players, function(player){
+
+				return TrainingPlayerService.findOrCreate({trainingId: id, playerId: player.id, decision: 'notyet'});
+
+			});
+
+		});
+
+	},
+
 	listForGroupIdAndPlayerId: function(groupId, playerId){
 
 		var queryListTrainingsForGroupIdAndPlayerId = db.format('select userTrainings.id, userTrainings.name, userTrainings.status, (select count(id) from activityPlayers where playerId = userTrainings.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId = userTrainings.id)) as activitiesCount from (select trainings.*, users.playerId as playerId from groupPlayers, users, groups, trainings where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null and trainings.groupId = groups.id) as userTrainings order by coalesce(userTrainings.modifiedAt, userTrainings.createdAt) desc', [playerId, groupId]);
 
 		return db.query(queryListTrainingsForGroupIdAndPlayerId);
 
+	},
+
+	//
+	create: function(parameters){
+
+		//
+		var authorId = parameters.authorId;
+
+		//
+		parameters.name = moment(parameters.startedAt).format('dddd، DD MMMM YYYY، hh:mm a');
+		parameters.createdAt = new Date();
+
+		//
+		delete parameters.authorId;
+
+		//
+		var queryInsertTraining = db.format('insert into trainings set ?', parameters);
+
+		//
+		return db.query(queryInsertTraining)
+
+		//
+		.then(function(insertTrainingResult){
+
+			var id = insertTrainingResult.insertId;
+
+			//
+			TrainingService.addGroupIdPlayersForPlayerIdToId(parameters.groupId, authorId, id)
+
+			//
+			.then(function(){
+				return TrainingActivityService.create({trainingId: id, authorId: authorId, type: 'training-started'});
+			});
+
+			// TODO: Find the training by id.
+			return id;
+		});
+	},
+
+};
+
+var TrainingPlayerService = {
+
+	//
+	findById: function(id){
+
+		var queryGetTrainingPlayer = db.format('select * from trainingPlayers where id = ? limit 1', [id]);
+		
+		return db.query(queryGetTrainingPlayer).then(function(trainingPlayers){
+
+			if (trainingPlayers.length == 0){
+				return null;
+			}
+
+			var trainingPlayer = trainingPlayers[0];
+			return trainingPlayer;
+		});
+	},
+
+	findOrCreate: function(parameters){
+
+		var queryGetTrainingPlayer = db.format('select * from trainingPlayers where trainingId = ? and playerId = ? limit 1', [parameters.trainingId, parameters.playerId]);
+
+		return db.query(queryGetTrainingPlayer)
+
+		.then(function(trainingPlayers){
+
+			if (trainingPlayers.length == 0){
+				return TrainingPlayerService.create(parameters);
+			}
+
+			//
+			var trainingPlayer = trainingPlayers[0];
+			return trainingPlayer;
+		});
+
+	},
+
+	create: function(parameters){
+
+		//
+		parameters.createdAt = new Date();
+
+		//
+		var queryInsertTrainingPlayer = db.format('insert into trainingPlayers set ?', [parameters]);
+		return db.query(queryInsertTrainingPlayer)
+
+		//
+		.then(function(insertTrainingPlayerResult){
+			return TrainingPlayerService.findById(insertTrainingPlayerResult.insertId);
+		});
+	},
+};
+
+var TrainingActivityService = {
+
+	//
+	findById: function(id){
+
+		var queryGetTrainingActivity = db.format('select * from trainingActivities where id = ? limit 1', [id]);
+		
+		return db.query(queryGetTrainingActivity).then(function(trainingActivities){
+
+			if (trainingActivities.length == 0){
+				return null;
+			}
+
+			var trainingActivity = trainingActivities[0];
+			return trainingActivity;
+		});
+	},
+
+	//
+	create: function(parameters){
+
+		//
+		parameters.createdAt = new Date();
+
+		//
+		var queryInsertTrainingActivity = db.format('insert into trainingActivities set ?', [parameters]);
+		
+		return db.query(queryInsertTrainingActivity)
+
+		//
+		.then(function(insertTrainingActivityResult){
+
+			var id = insertTrainingActivityResult.insertId;
+
+			// Notify every one in the training about this activity.
+			TrainingActivityService.notifyAboutId(id);
+
+			//
+			return TrainingActivityService.findById(id);
+		})
+	},
+
+	//
+	notifyAboutId: function(id){
+
+		// 1. Get the activity receivers.
+		// 2. Push to each a notification.
 	},
 
 };
@@ -1155,7 +1314,6 @@ router.get('/groups', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /groups/latest
@@ -1430,9 +1588,6 @@ router.get('/groups/:groupId/trainings/latest', authenticatable, function(reques
 // POST /groups/:groupId/trainings/add
 router.post('/groups/:groupId/trainings/add', authenticatable, function(request, response){
 
-	// Get the user token.
-	var token = request.get('X-User-Token');
-
 	if (!validator.isNumeric(request.params.groupId) || validator.isNull(request.body.stadium) || !validator.isDate(request.body.startedAt) || !validator.isNumeric(request.body.playersCount) || request.body.playersCount <= 0 || !validator.isNumeric(request.body.subsetPlayersCount) || request.body.subsetPlayersCount <= 0){
 		response.status(400).send({
 			'message': 'Bad request.',
@@ -1446,65 +1601,32 @@ router.post('/groups/:groupId/trainings/add', authenticatable, function(request,
 	var playersCount = request.body.playersCount;
 	var subsetPlayersCount = request.body.subsetPlayersCount;
 
-	db.query('select groups.*, users.playerId from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groupPlayers.role = \'admin\' and groups.deletedAt is null', [token, groupId], function(error, rows){
+	// Check if the user is admin or die. (checkIsAdminOrDie)
+	// Insert a new training, spread trainingPlayers, trainingActivities, notify ().
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error.',
-			});
-			return;
-		}
+	//
+	UserService.findCurrentOrDie(request)
 
-		if (rows.length == 0){
-			response.status(401).send({
-				'message': 'Not authorized to add a training.',
-			});
-			return;
-		}
+	//
+	.then(function(user){
+		return GroupService.checkIsPlayerIdAdminForIdOrDie(user.playerId, groupId);
+	})
 
-		// Set the locale of the training.
-		moment.locale('ar-sa');
+	//
+	.then(function(groupPlayer){
 
-		// Define the group.
-		var group = rows[0];
-		var name = moment(startedAt).format('dddd، DD MMMM YYYY، hh:mm a');
-		
-		var insertTrainingParameters = {groupId: group.id, name: name, status: 'gathering', stadium: stadium, startedAt: startedAt, playersCount: playersCount, subsetPlayersCount: subsetPlayersCount, createdAt: new Date()};
-		db.query('insert into trainings set ?', [insertTrainingParameters], function(error, insertTrainingResult){
+		return TrainingService.create({groupId: groupPlayer.groupId, status: 'gathering', stadium: stadium, startedAt: startedAt, playersCount: playersCount, subsetPlayersCount: subsetPlayersCount, authorId: user.playerId});
 
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error.',
-				});
-				return;
-			}
+	})
 
-			console.log('Training #' + insertTrainingResult.insertId + ' has been created successfully.');
+	// Response about it.
+	.then(function(createTrainingResult){
+		return response.send({'id': createTrainingResult.insertId});
+	})
 
-			response.send({
-				'id': insertTrainingResult.insertId,
-			});
-
-			// Add a new activity and send it to all training active members.
-			var insertTrainingActivityParameters = {trainingId: insertTrainingResult.insertId, authorId: group.playerId, type: 'training-started', createdAt: new Date()};
-			db.query('insert into trainingActivities set ?', [insertTrainingActivityParameters], function(error, insertTrainingActivityResult){
-
-				if (error){
-					console.error(error.stack);
-					response.status(500).send({
-						'message': 'Internal server error.',
-					});
-					return;
-				}
-
-				console.log('Training activity #' + insertTrainingActivityResult.insertId + ' has been created successfully.');
-
-				// Notify training players about it.
-				activity.notify(insertTrainingActivityResult.insertId);
-			});
-		});
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
 });
 
@@ -1543,7 +1665,7 @@ router.get('/trainings/:id', authenticatable, function(request, response){
 		// Define the training.
 		var training = rows[0];
 
-		db.query('select players.fullname, players.id, if(trainingPlayers.decision is null, \'notyet\', trainingPlayers.decision) as decision from players, groupPlayers left join trainingPlayers on groupPlayers.playerId = trainingPlayers.playerId and trainingPlayers.trainingId = ? where groupPlayers.groupId = ? and players.id = groupPlayers.playerId  and not (groupPlayers.leftAt is not null and decision is null)', [training.id, training.groupId], function(error, rows){
+		db.query('select players.fullname, players.id, if(trainingPlayers.decision is null, \'notyet\', trainingPlayers.decision) as decision from players, groupPlayers left join trainingPlayers on groupPlayers.playerId = trainingPlayers.playerId and trainingPlayers.trainingId = ? where groupPlayers.groupId = ? and players.id = groupPlayers.playerId and not (groupPlayers.leftAt is not null and decision is null)', [training.id, training.groupId], function(error, rows){
 
 			if (error){
 				console.error(error.stack);
@@ -2339,5 +2461,11 @@ console.log('App active on localhost:' + port);
 
 // .then(function(groups){
 // 	console.log(groups);
+// });
+
+// TrainingService.create({groupId: 6, name: 'Name of Something', status: 'gathering', stadium: 'stadium', startedAt: new Date(), playersCount: 10, subsetPlayersCount: 4, authorId: 1})
+
+// .then(function(training){
+// 	console.log(training);
 // });
 
