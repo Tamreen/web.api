@@ -504,6 +504,9 @@ var UserService = {
 	//
 	updateForId: function(parameters, id){
 
+		//
+		parameters.modifiedAt = new Date();
+
 		var queryUpdateUserById = db.format('update users set ? where id = ?', [parameters, id]);
 		
 		return db.query(queryUpdateUserById)
@@ -554,6 +557,9 @@ var PlayerService = {
 
 	//
 	updateForId: function(parameters, id){
+
+		//
+		parameters.modifiedAt = new Date();
 
 		var queryUpdatePlayerById = db.format('update players set ? where id = ?', [parameters, id]);
 		
@@ -926,7 +932,7 @@ var TrainingService = {
 	//
 	findForPlayerIdById: function(playerId, id){
 
-		var queryGetTraining = db.format('select trainings.*, ((select count(groupPlayers.id) from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = trainingPlayers.playerId and groups.id = trainings.groupId and users.deletedAt is null and groups.deletedAt is null and groupPlayers.leftAt is null and groupPlayers.role = \'admin\') <> 0) as adminable from trainingPlayers, trainings where trainingPlayers.trainingId = trainings.id and trainingPlayers.playerId = ? and trainings.id = ?', [playerId, id]);
+		var queryGetTraining = db.format('select trainings.*, (select decision from trainingPlayers where trainingId = trainings.id and playerId = tp.playerId) as playerDecision, (select count(groupPlayers.id) > 0 from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = tp.playerId and groups.id = trainings.groupId and users.deletedAt is null and groups.deletedAt is null and groupPlayers.leftAt is null and groupPlayers.role = \'admin\') as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'register-as-subset\') subsetPlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'notyet\') as notyetPlayersCount from trainingPlayers tp, trainings where tp.trainingId = trainings.id and tp.playerId = ? and trainings.id = ?;', [playerId, id]);
 		
 		return db.query(queryGetTraining).then(function(trainings){
 
@@ -1060,7 +1066,64 @@ var TrainingService = {
 		.then(function(){
 			return t;
 		})
-	}
+	},
+
+	//
+	cancelIdByPlayerId: function(id, playerId){
+
+		var t = null;
+
+		// TODO: Get the training by id.
+		return TrainingService.findForPlayerIdById(playerId, id)
+
+		//
+		.then(function(training){
+
+			// Check if the training is valid.
+			if (!training){
+				throw new BadRequestError('The training cannot be found.');
+			}
+
+			//
+			t = training;
+
+			// Check if the player id is not admin.
+			if (training.adminable == 0){
+				throw new BadRequestError('The training cannot be canceled when the player is not admin.');
+			}
+
+			// Check if the training is not already canceled.
+			if (training.status == 'canceled'){
+				throw new BadRequestError('The training is already canceled.');
+			}
+
+			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-canceled'});
+		})
+
+		// Update the status of the training to be 'canceled'.
+		.then(function(trainingActivity){
+			return TrainingService.updateForId({status: 'canceled'}, t.id);
+		});
+	},
+
+	//
+	updateForId: function(parameters, id){
+
+		//
+		parameters.modifiedAt = new Date();
+
+		var queryUpdateTrainingById = db.format('update trainings set ? where id = ?', [parameters, id]);
+		
+		return db.query(queryUpdateTrainingById)
+
+		.then(function(updateTrainingByIdResult){
+
+			// return TrainingService.findById(id);
+			// TODO: This could be fixed in a better way.
+			return true;
+
+		});
+	},
 
 };
 
@@ -1256,6 +1319,7 @@ var TrainingActivityService = {
 
 			// TODO: Push the notification, it should display an icon for android devices.
 			// TODO: There could be another way of notifying the user (e.g. SMS or email).
+			console.log('I am trying to push notifications to the recipients.');
 
 			return ar;
 		});
@@ -1883,9 +1947,6 @@ router.get('/trainings/:id', authenticatable, function(request, response){
 // GET /trainings/:id/willcome
 router.get('/trainings/:id/willcome', authenticatable, function(request, response){
 
-	// Get the user token.
-	var token = request.get('X-User-Token');
-
 	if (!validator.isNumeric(request.params.id)){
 		response.status(400).send({
 			'message': 'Bad request.',
@@ -1895,8 +1956,11 @@ router.get('/trainings/:id/willcome', authenticatable, function(request, respons
 
 	var id = request.params.id;
 
+	// TODO: findForPlayerIdById.
+
+
 	// Execute the main query.
-	db.query('select userTrainings.*, (select count(id) from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.decision = \'register-as-subset\') registerAsSubsetPlayersCount, (select count(id) > 0 as decided from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.playerId = userTrainings.playerId and (trainingPlayers.decision = \'willcome\' or trainingPlayers.decision = \'register-as-subset\')) as decided from (select trainings.*, userGroups.playerId from trainings, (select groups.id as groupId, groupPlayers.playerId from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups where userGroups.groupId in (trainings.groupId) and trainings.id = ? and trainings.status <> \'canceled\') as userTrainings;', [token, id], function(error, rows){
+	db.query('select userTrainings.*, (select count(id) from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.decision = \'register-as-subset\') subsetPlayersCount, (select count(id) > 0 as decided from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.playerId = userTrainings.playerId and (trainingPlayers.decision = \'willcome\' or trainingPlayers.decision = \'register-as-subset\')) as decided from (select trainings.*, userGroups.playerId from trainings, (select groups.id as groupId, groupPlayers.playerId from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups where userGroups.groupId in (trainings.groupId) and trainings.id = ? and trainings.status <> \'canceled\') as userTrainings;', [token, id], function(error, rows){
 
 		if (error){
 			console.error(error.stack);
@@ -2381,9 +2445,6 @@ router.get('/trainings/:id/apologize', authenticatable, function(request, respon
 // GET /trainings/:id/cancel
 router.get('/trainings/:id/cancel', authenticatable, function(request, response){
 
-	// Get the user token.
-	var token = request.get('X-User-Token');
-
 	if (!validator.isNumeric(request.params.id)){
 		response.status(400).send({
 			'message': 'Bad request.',
@@ -2393,59 +2454,24 @@ router.get('/trainings/:id/cancel', authenticatable, function(request, response)
 
 	var id = request.params.id;
 
-	db.query('select trainings.id, userGroups.playerId from trainings, (select groups.id as groupId, groupPlayers.playerId from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\') as userGroups where userGroups.groupId in (trainings.groupId) and trainings.id = ? and trainings.status <> \'canceled\'', [token, id], function(error, rows){
+	//
+	UserService.findCurrentOrDie(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error 1.',
-			});
-			return;
-		}
+	//
+	.then(function(user){
+		return TrainingService.cancelIdByPlayerId(id, user.playerId);
+	})
 
-		if (rows.length == 0){
-			response.status(401).send({
-				'message': 'Not authorized to access this route.'
-			});
-			return;
-		}
+	// Response about it.
+	.then(function(){
+		return response.status(204).send();
+	})
 
-		// Define the training.
-		var training = rows[0];
-
-		// Insert a new training activity.
-		var insertTrainingActivityParameters = {trainingId: training.id, authorId: training.playerId, type: 'training-canceled', createdAt: new Date()};
-		db.query('insert into trainingActivities set ?', [insertTrainingActivityParameters], function(error, result){
-
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error 1.',
-				});
-				return;
-			}
-
-			var updateTrainingParameters = {status: 'canceled', modifiedAt: new Date()};
-			db.query('update trainings set ? where id = ?', [updateTrainingParameters, training.id], function(error, updateTrainingResult){
-
-				if (error){
-					console.error(error.stack);
-					response.status(500).send({
-						'message': 'Internal server error 1.',
-					});
-					return;
-				}
-
-				// Done.
-				response.status(204).send();
-
-				console.log('Training activity #' + result.insertId + ' has been created successfully.');
-
-				// Notify training players about it.
-				activity.notify(result.insertId);
-			});
-		});
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /trainings/:id/activities
@@ -2602,7 +2628,7 @@ console.log('App active on localhost:' + port);
 
 // var updateUserParameters = {deviceType: 'android'};
 
-// UserService.updateForId(623, updateUserParameters).then(function(user){
+// UserService.updateForId(updateUserParameters, 623).then(function(user){
 // 	console.log(user);
 // });
 
@@ -2645,7 +2671,7 @@ console.log('App active on localhost:' + port);
 // 	console.log(done);
 // });
 
-// TrainingService.findForPlayerIdById(1, 1)
+// TrainingService.findForPlayerIdById(20, 15)
 // .then(function(training){
 // 	console.log(training);
 // });
@@ -2655,8 +2681,12 @@ console.log('App active on localhost:' + port);
 // 	console.log(players);
 // });
 
-// TrainingService.detailsByPlayerIdAndId(1, 15)
+// TrainingService.detailsByPlayerIdAndId(1, 76)
 // .then(function(training){
-// 	console.log('Promise fullfilled.');
 // 	console.log(training);
+// });
+
+// TrainingService.cancelIdByPlayerId(21, 1)
+// .then(function(done){
+// 	console.log('The promise has been fullfilled.');
 // });
