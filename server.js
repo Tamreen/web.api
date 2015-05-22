@@ -523,7 +523,6 @@ var UserService = {
 		var queryUpdateUser = db.format('update users set ? where token = ?', [updateUserParameters, user.token]);
 		return db.query(queryUpdateUser);
 	},
-
 };
 
 var PlayerService = {
@@ -569,7 +568,6 @@ var PlayerService = {
 			return PlayerService.findById(id);
 		});
 	},
-
 };
 
 var GroupService = {
@@ -838,7 +836,6 @@ var GroupService = {
 			return GroupPlayerService.updateForId(updateGroupPlayerParameters, groupPlayer.id);
 		});
 	},
-
 };
 
 //
@@ -958,7 +955,6 @@ var TrainingService = {
 			});
 
 		});
-
 	},
 
 	listForGroupIdAndPlayerId: function(groupId, playerId){
@@ -966,7 +962,6 @@ var TrainingService = {
 		var queryListTrainingsForGroupIdAndPlayerId = db.format('select userTrainings.id, userTrainings.name, userTrainings.status, (select count(id) from activityPlayers where playerId = userTrainings.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId = userTrainings.id)) as activitiesCount from (select trainings.*, users.playerId as playerId from groupPlayers, users, groups, trainings where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null and trainings.groupId = groups.id) as userTrainings order by coalesce(userTrainings.modifiedAt, userTrainings.createdAt) desc', [playerId, groupId]);
 
 		return db.query(queryListTrainingsForGroupIdAndPlayerId);
-
 	},
 
 	//
@@ -1012,7 +1007,6 @@ var TrainingService = {
 		var queryListTrainingPlayers = db.format('select players.fullname, players.id, trainingPlayers.decision as decision from trainingPlayers, players where trainingPlayers.playerId = players.id and trainingPlayers.trainingId = ?', [id]);
 
 		return db.query(queryListTrainingPlayers);
-
 	},
 
 	detailsByPlayerIdAndId: function(playerId, id){
@@ -1071,9 +1065,10 @@ var TrainingService = {
 	//
 	cancelIdByPlayerId: function(id, playerId){
 
+		//
 		var t = null;
 
-		// TODO: Get the training by id.
+		// Get the training by id.
 		return TrainingService.findForPlayerIdById(playerId, id)
 
 		//
@@ -1092,7 +1087,7 @@ var TrainingService = {
 				throw new BadRequestError('The training cannot be canceled when the player is not admin.');
 			}
 
-			// Check if the training is not already canceled.
+			// Check if the training is already canceled.
 			if (training.status == 'canceled'){
 				throw new BadRequestError('The training is already canceled.');
 			}
@@ -1114,24 +1109,105 @@ var TrainingService = {
 
 		var queryUpdateTrainingById = db.format('update trainings set ? where id = ?', [parameters, id]);
 		
-		return db.query(queryUpdateTrainingById)
+		return db.query(queryUpdateTrainingById);
 
-		.then(function(updateTrainingByIdResult){
-
-			// return TrainingService.findById(id);
-			// TODO: This could be fixed in a better way.
-			return true;
-
-		});
+		// TODO: This could be fixed in a better way.
 	},
 
+	//
+	decideForPlayerIdToComeToId: function(playerId, id){
+
+		//
+		var t = null;
+		var ta = null;
+
+		// Get the training by id.
+		return TrainingService.findForPlayerIdById(playerId, id)
+
+		//
+		.then(function(training){
+
+			// Check if the training is valid.
+			if (!training){
+				throw new BadRequestError('The training cannot be found.');
+			}
+
+			//
+			t = training;
+
+			// Check if the training is already canceled.
+			if (t.status == 'canceled'){
+				throw new BadRequestError('The training is already canceled.');
+			}
+
+			// Check if the player id has decided.
+			if (t.playerDecision == 'willcome' || t.playerDecision == 'register-as-subset'){
+				throw new BadRequestError('The player id already has decided.');
+			}
+
+			// Check if the training is already completed.
+			if (t.playersCount == t.willcomePlayersCount && t.subsetPlayersCount == t.registerAsSubsetPlayersCount){
+				throw new BadRequestError('The training is already completed.');
+			}
+
+			// Check if there is enough space for attending as a major player.
+			if (t.playersCount > t.willcomePlayersCount){
+				console.log('The player id decided to come.');
+				return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'player-decided-to-come'});
+			}
+
+			// Check if there is no enough space for that.
+			if (t.subsetPlayersCount > t.registerAsSubsetPlayersCount){
+				console.log('The player id registered as subset.');
+				return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'register-as-subset'});
+			}
+		})
+
+		// Update the training player decision.
+		.then(function(activity){
+
+			//
+			ta = activity;
+
+			if (activity.type == 'player-decided-to-come'){
+				return TrainingPlayerService.updateDecisionByTrainingIdAndPlayerId('willcome', t.id, playerId);
+			}
+
+			if (activity.type == 'register-as-subset'){
+				return TrainingPlayerService.updateDecisionByTrainingIdAndPlayerId('register-as-subset', t.id, playerId);
+			}
+		})
+
+		// Check if the training now is completed.
+		.then(function(){
+
+			if (ta.type == 'player-decided-to-come'){
+
+				// If the training is completed, create activity and notify the players.
+				if (t.playersCount == t.willcomePlayersCount + 1){
+
+					console.log('The training is now completed.');
+
+					// Complete the training.
+					TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-completed'})
+
+					//
+					.then(function(completedActivity){
+						return TrainingService.updateForId({status: 'completed'});
+					});
+				}
+			}
+
+			// Just to assure that the promise has been fullfilled.
+			return true;
+		})
+	},
 };
 
 var TrainingPlayerService = {
 
 	//
 	findById: function(id){
-
 		var queryGetTrainingPlayer = db.format('select * from trainingPlayers where id = ? limit 1', [id]);
 		
 		return db.query(queryGetTrainingPlayer).then(function(trainingPlayers){
@@ -1145,6 +1221,7 @@ var TrainingPlayerService = {
 		});
 	},
 
+	//
 	findOrCreate: function(parameters){
 
 		var queryGetTrainingPlayer = db.format('select * from trainingPlayers where trainingId = ? and playerId = ? limit 1', [parameters.trainingId, parameters.playerId]);
@@ -1161,9 +1238,9 @@ var TrainingPlayerService = {
 			var trainingPlayer = trainingPlayers[0];
 			return trainingPlayer;
 		});
-
 	},
 
+	//
 	create: function(parameters){
 
 		//
@@ -1178,6 +1255,17 @@ var TrainingPlayerService = {
 			return TrainingPlayerService.findById(insertTrainingPlayerResult.insertId);
 		});
 	},
+
+	//
+	updateDecisionByTrainingIdAndPlayerId: function(decision, trainingId, playerId){
+
+		//
+		var updateTrainingPlayerParameters = {decision: decision, modifiedAt: new Date()};
+		var queryUpdateTrainingPlayerDecision = db.format('update trainingPlayers set ? where trainingId = ? and playerId = ?', [updateTrainingPlayerParameters, trainingId, playerId]);
+		
+		// 
+		return db.query(queryUpdateTrainingPlayerDecision);
+	}
 };
 
 var ActivityPlayerService = {
@@ -1257,6 +1345,7 @@ var ActivityPlayerService = {
 		});
 	},
 
+	// TODO: Update parameters by id.
 };
 
 var TrainingActivityService = {
@@ -1345,6 +1434,7 @@ var TrainingActivityService = {
 
 			// TODO: Push the notification, it should display an icon for android devices.
 			// TODO: There could be another way of notifying the user (e.g. SMS or email).
+
 			console.log('I am trying to push notifications to the recipients.');
 
 			return ar;
@@ -1426,7 +1516,6 @@ var TrainingActivityService = {
 			return activities;
 		});
 	},
-
 };
 
 //
@@ -2008,274 +2097,27 @@ router.get('/trainings/:id/willcome', authenticatable, function(request, respons
 		return;
 	}
 
+	//
 	var id = request.params.id;
 
-	// TODO: findForPlayerIdById.
-
-
-	// Execute the main query.
-	db.query('select userTrainings.*, (select count(id) from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.decision = \'register-as-subset\') subsetPlayersCount, (select count(id) > 0 as decided from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.playerId = userTrainings.playerId and (trainingPlayers.decision = \'willcome\' or trainingPlayers.decision = \'register-as-subset\')) as decided from (select trainings.*, userGroups.playerId from trainings, (select groups.id as groupId, groupPlayers.playerId from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups where userGroups.groupId in (trainings.groupId) and trainings.id = ? and trainings.status <> \'canceled\') as userTrainings;', [token, id], function(error, rows){
-
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error 1.',
-			});
-			return;
-		}
-
-		if (rows.length == 0){
-			response.status(401).send({
-				'message': 'Not authorized to access this route.'
-			});
-			return;
-		}
-
-		// Define the training.
-		var training = rows[0];
-
-		// Check if the user has decided.
-		if (training.decided == true){
-			response.status(400).send({
-				'message': 'You already have decided.'
-			});
-			return;
-		}
-
-		// Check if the training is full.
-		if (training.playersCount == training.willcomePlayersCount && training.subsetPlayersCount == training.registerAsSubsetPlayersCount){
-			response.status(400).send({
-				'message': 'The training is completed.',
-			});
-			return;
-		}
-
-		// Player.
-		if (training.playersCount > training.willcomePlayersCount){
-
-			var insertTrainingActivityParameters = {trainingId: training.id, authorId: training.playerId, type: 'player-decided-to-come', createdAt: new Date()};
-
-			db.query('insert into trainingActivities set ?', [insertTrainingActivityParameters], function(error, result){
-
-				if (error){
-					console.error(error.stack);
-					response.status(500).send({
-						'message': 'Internal server error in trainingActivities.',
-					});
-					return;
-				}
-
-				db.query('select * from trainingPlayers where trainingId = ? and playerId = ?', [training.id, training.playerId], function(error, trainingPlayerRows){
-
-					if (error){
-						console.error(error.stack);
-						response.status(500).send({
-							'message': 'Internal server error in trainingPlayers.',
-						});
-						return;
-					}
-
-					if (trainingPlayerRows.length == 0){
-
-						// Insert it then.
-						var insertTrainingPlayerParameters = {trainingId: training.id, playerId: training.playerId, decision: 'willcome', createdAt: new Date()};
-
-						db.query('insert into trainingPlayers set ?', [insertTrainingPlayerParameters], function(error, insertTrainingPlayerResult){
-
-							if (error){
-								console.error(error.stack);
-								response.status(500).send({
-									'message': 'Internal server error in trainingPlayers.',
-								});
-								return;
-							}
-
-							// Done.
-							response.status(204).send();
-
-							// Do tell.
-							console.log('Training activity #' + result.insertId + ' has been created successfully.');
-
-							// Notify training players about it.
-							activity.notify(result.insertId);
-
-							// Check if the training is complete.
-							if (training.playersCount == training.willcomePlayersCount + 1){
-
-								// Insert training is completed activity.
-								var insertCompletedTrainingActivityParameters = {trainingId: training.id, authorId: training.playerId, type: 'training-completed', createdAt: new Date()};
-
-								db.query('insert into trainingActivities set ?', [insertCompletedTrainingActivityParameters], function(error, insertCompletedTrainingActivityResult){
-
-									if (error){
-										console.error(error.stack);
-										return;
-									}
-
-									// Training is completed.
-									var updateTrainingCompletedParameters = {status: 'completed', modifiedAt: new Date()};
-
-									db.query('update trainings set ? where id = ?', [updateTrainingCompletedParameters, training.id], function(error, updateTrainingCompletedResult){
-
-										if (error){
-											console.error(error.stack);
-											return;
-										}
-
-										console.log('Training has been completed.');
-									});
-
-									// Do tell about it, notify.
-									console.log('Training activity #' + insertCompletedTrainingActivityResult.insertId + ' has been created successfully.');
-
-									// Notify training players about it.
-									activity.notify(insertCompletedTrainingActivityResult.insertId);
-								});
-							}
-						});
-
-						return;
-					}
-
-					// Update it then.
-					var updateTrainingPlayerParameters = {decision: 'willcome', modifiedAt: new Date()};
-
-					db.query('update trainingPlayers set ? where trainingId = ? and playerId = ?', [updateTrainingPlayerParameters, training.id, training.playerId], function(error, updateTrainingPlayerResult){
-
-						if (error){
-							console.error(error.stack);
-							response.status(500).send({
-								'message': 'Internal server error in trainingPlayers.',
-							});
-							return;
-						}
-
-						// Done.
-						response.status(204).send();
-
-						// Do tell.
-						console.log('Training activity #' + result.insertId + ' has been created successfully.');
-
-						// Notify training players about it.
-						activity.notify(result.insertId);
-
-						// Check if the training is complete.
-						if (training.playersCount == training.willcomePlayersCount + 1){
-
-							// Insert training is completed activity.
-							var insertCompletedTrainingActivityParameters = {trainingId: training.id, authorId: training.playerId, type: 'training-completed', createdAt: new Date()};
-
-							db.query('insert into trainingActivities set ?', [insertCompletedTrainingActivityParameters], function(error, insertCompletedTrainingActivityResult){
-
-								if (error){
-									console.error(error.stack);
-									return;
-								}
-
-								// Training is completed.
-								var updateTrainingCompletedParameters = {status: 'completed', modifiedAt: new Date()};
-
-								db.query('update trainings set ? where id = ?', [updateTrainingCompletedParameters, training.id], function(error, updateTrainingCompletedResult){
-
-									if (error){
-										console.error(error.stack);
-										return;
-									}
-
-									console.log('Training has been completed.');
-								});
-
-								// Do tell about it, notify.
-								console.log('Training activity #' + insertCompletedTrainingActivityResult.insertId + ' has been created successfully.');
-
-								// Notify training players about it.
-								activity.notify(insertCompletedTrainingActivityResult.insertId);
-							});
-						}
-					});
-				});
-			});
-			return;
-		}
-
-		// Subset player.
-		if (training.subsetPlayersCount > training.registerAsSubsetPlayersCount){
-
-			var insertTrainingActivityParameters = {trainingId: training.id, authorId: training.playerId, type: 'player-registered-as-subset', createdAt: new Date()};
-
-			db.query('insert into trainingActivities set ?', [insertTrainingActivityParameters], function(error, result){
-
-				if (error){
-					console.error(error.stack);
-					response.status(500).send({
-						'message': 'Internal server error in trainingActivities.',
-					});
-					return;
-				}
-
-				db.query('select * from trainingPlayers where trainingId = ? and playerId = ?', [training.id, training.playerId], function(error, trainingPlayerRows){
-
-					if (error){
-						console.error(error.stack);
-						response.status(500).send({
-							'message': 'Internal server error in trainingPlayers.',
-						});
-						return;
-					}
-
-					if (trainingPlayerRows.length == 0){
-
-						// Insert it then.
-						var insertTrainingPlayerParameters = {trainingId: training.id, playerId: training.playerId, decision: 'register-as-subset', createdAt: new Date()};
-
-						db.query('insert into trainingPlayers set ?', [insertTrainingPlayerParameters], function(error, insertTrainingPlayerResult){
-
-							if (error){
-								console.error(error.stack);
-								response.status(500).send({
-									'message': 'Internal server error in trainingPlayers.',
-								});
-								return;
-							}
-
-							// Done.
-							response.status(204).send();
-
-							// Do tell.
-							console.log('Training activity #' + result.insertId + ' has been created successfully.');
-
-							// Notify training players about it.
-							activity.notify(result.insertId);
-						});
-						return;
-					}
-
-					// Update it then.
-					var updateTrainingPlayerParameters = {decision: 'register-as-subset', modifiedAt: new Date()};
-
-					db.query('update trainingPlayers set ? where trainingId = ? and playerId = ?', [updateTrainingPlayerParameters, training.id, training.playerId], function(error, updateTrainingPlayerResult){
-
-						if (error){
-							console.error(error.stack);
-							response.status(500).send({
-								'message': 'Internal server error in trainingPlayers.',
-							});
-							return;
-						}
-
-						// Done.
-						response.status(204).send();
-
-						// Do tell.
-						console.log('Training activity #' + result.insertId + ' has been created successfully.');
-
-						// Notify training players about it.
-						activity.notify(result.insertId);
-					});
-				});
-			});
-		}
+	//
+	UserService.findCurrentOrDie(request)
+
+	//
+	.then(function(user){
+		return TrainingService.decideForPlayerIdToComeToId(user.playerId, id);
+	})
+
+	// Response about it.
+	.then(function(){
+		return response.status(204).send();
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /trainings/:id/apologize
@@ -2525,7 +2367,6 @@ router.get('/trainings/:id/cancel', authenticatable, function(request, response)
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /trainings/:id/activities
@@ -2703,7 +2544,13 @@ console.log('App active on localhost:' + port);
 // 	console.log('The promise has been fullfilled.');
 // });
 
-TrainingActivityService.listByTrainingIdAndPlayerId(15, 1)
-.then(function(activities){
-	console.log(activities);
-})
+// TrainingActivityService.listByTrainingIdAndPlayerId(15, 1)
+// .then(function(activities){
+// 	console.log(activities);
+// });
+
+TrainingService.decideForPlayerIdToComeToId(1, 1)
+.then(function(done){
+	console.log('The player id has decided to come to the id.');
+});
+
