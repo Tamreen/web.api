@@ -1231,6 +1231,32 @@ var ActivityPlayerService = {
 			return ActivityPlayerService.findById(insertActivityPlayerResult.insertId);
 		});
 	},
+
+	//
+	markAsReadManyByPlayerId: function(activities, playerId){
+
+		// Extract the ids only from the activities.
+		ids = [];
+
+		//
+		return Promise.each(activities, function(activity){
+			return ids.push(activity.id);
+		})
+
+		//
+		.then(function(){
+
+			// Make all activities for this training read.
+			var updateActivityPlayerParameters = {readable: 1, modifiedAt: new Date()};
+
+			//
+			var queryUpdateActivityPlayer = db.format('update activityPlayers set ? where activityId in (?) and readable = 0 and playerId = ?', [updateActivityPlayerParameters, ids, playerId]);
+
+			//
+			return db.query(queryUpdateActivityPlayer);
+		});
+	},
+
 };
 
 var TrainingActivityService = {
@@ -1371,6 +1397,34 @@ var TrainingActivityService = {
 				return 'تحضير التمرين غير مُكتمل';
 			break;
 		}
+	},
+
+	//
+	listByTrainingIdAndPlayerId: function(trainingId, playerId){
+
+		return TrainingService.findForPlayerIdById(playerId, trainingId)
+
+		//
+		.then(function(training){
+
+			if (!training){
+				throw new BadRequestError('The training cannot be found.');
+			}
+
+			var queryGetTrainingActivities = db.format('select trainingActivities.*, players.fullname as author from trainingActivities, players where trainingActivities.authorId = players.id and trainingActivities.trainingId = ? order by trainingActivities.createdAt asc', [training.id]);
+
+			//
+			return db.query(queryGetTrainingActivities);
+		})
+
+		//
+		.then(function(activities){
+
+			// Set that the activity is read by player id.
+			ActivityPlayerService.markAsReadManyByPlayerId(activities, playerId);
+
+			return activities;
+		});
 	},
 
 };
@@ -2477,9 +2531,6 @@ router.get('/trainings/:id/cancel', authenticatable, function(request, response)
 // GET /trainings/:id/activities
 router.get('/trainings/:id/activities', authenticatable, function(request, response){
 
-	// Get the user token.
-	var token = request.get('X-User-Token');
-
 	if (!validator.isNumeric(request.params.id)){
 		response.status(400).send({
 			'message': 'Bad request.',
@@ -2490,60 +2541,22 @@ router.get('/trainings/:id/activities', authenticatable, function(request, respo
 	// Set the request.
 	var id = request.params.id;
 
-	db.query('select trainings.id, userGroups.playerId as playerId from trainings, (select users.playerId as playerId, groups.id as groupId from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups where userGroups.groupId in (trainings.groupId) and trainings.id = ?', [token, id], function(error, rows){
+	//
+	UserService.findCurrentOrDie(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error 1.',
-			});
-			return;
-		}
+	//
+	.then(function(user){
+		return TrainingActivityService.listByTrainingIdAndPlayerId(id, user.playerId);
+	})
 
-		if (rows.length == 0){
-			response.status(401).send({
-				'message': 'Not authorized to access this route.'
-			});
-			return;
-		}
+	// Response about it.
+	.then(function(activities){
+		return response.send(activities);
+	})
 
-		// Define the training.
-		var training = rows[0];
-
-		db.query('select trainingActivities.*, players.fullname as author from trainingActivities, players where trainingActivities.authorId = players.id and trainingActivities.trainingId = ? order by trainingActivities.createdAt asc', [training.id], function(error, rows){
-
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error 1.',
-				});
-				return;
-			}
-
-			response.send(rows);
-
-			// Set the ids, in other words, the activities.
-			ids = [];
-
-			rows.forEach(function(item){
-				ids.push(item.id);
-			});
-
-			// Make all activities for this training read.
-			var updateActivityPlayerParameters = {readable: 1, modifiedAt: new Date()};
-			db.query('update activityPlayers set ? where activityId in (?) and readable = 0 and playerId = ?', [updateActivityPlayerParameters, ids, training.playerId], function(error, result){
-
-				if (error){
-					console.error(error.stack);
-					return;
-				}
-
-				console.log('Activities have been read.');
-
-			});
-
-			return;
-		});
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
 });
 
@@ -2603,7 +2616,6 @@ router.post('/feedbacks/add', function(request, response){
 		return handleApiErrors(error, response);
 	});
 });
-
 
 // Attach all previous routes under /api/v1.
 app.use('/api/v1', router);
@@ -2690,3 +2702,8 @@ console.log('App active on localhost:' + port);
 // .then(function(done){
 // 	console.log('The promise has been fullfilled.');
 // });
+
+TrainingActivityService.listByTrainingIdAndPlayerId(15, 1)
+.then(function(activities){
+	console.log(activities);
+})
