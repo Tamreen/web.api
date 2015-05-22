@@ -76,7 +76,6 @@ var db = {
 	format: function(query, parameters){
 		return mysql.format(query, parameters);
 	}
-
 };
 
 //
@@ -1115,7 +1114,7 @@ var TrainingService = {
 	},
 
 	//
-	decideForPlayerIdToComeToId: function(playerId, id){
+	decideForPlayerIdToComeToId: function(playerId, id, evenIfWasSubset){
 
 		//
 		var t = null;
@@ -1141,7 +1140,7 @@ var TrainingService = {
 			}
 
 			// Check if the player id has decided.
-			if (t.playerDecision == 'willcome' || t.playerDecision == 'register-as-subset'){
+			if (t.playerDecision == 'willcome' || (t.playerDecision == 'register-as-subset' && evenIfWasSubset == false)){
 				throw new BadRequestError('The player id already has decided.');
 			}
 
@@ -1152,13 +1151,11 @@ var TrainingService = {
 
 			// Check if there is enough space for attending as a major player.
 			if (t.playersCount > t.willcomePlayersCount){
-				console.log('The player id decided to come.');
 				return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'player-decided-to-come'});
 			}
 
 			// Check if there is no enough space for that.
 			if (t.subsetPlayersCount > t.registerAsSubsetPlayersCount){
-				console.log('The player id registered as subset.');
 				return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'register-as-subset'});
 			}
 		})
@@ -1202,6 +1199,103 @@ var TrainingService = {
 			return true;
 		})
 	},
+
+	//
+	decideForPlayerIdToApologizeToId: function(playerId, id){
+
+		//
+		var t = null;
+		var ta = null;
+
+		// Get the training by id.
+		return TrainingService.findForPlayerIdById(playerId, id)
+
+		//
+		.then(function(training){
+
+			// Check if the training is valid.
+			if (!training){
+				throw new BadRequestError('The training cannot be found.');
+			}
+
+			//
+			t = training;
+
+			// Check if the training is already canceled.
+			if (t.status == 'canceled'){
+				throw new BadRequestError('The training is already canceled.');
+			}
+
+			// Check if the player id has decided.
+			if (t.playerDecision == 'apologize'){
+				throw new BadRequestError('The player id already has decided.');
+			}
+
+			// TODO: If it is too late then it is too late.
+
+			//
+			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'player-apologized'});
+		})
+
+		// Update the training player decision.
+		.then(function(activity){
+
+			//
+			ta = activity;
+
+			//
+			return TrainingPlayerService.updateDecisionByTrainingIdAndPlayerId('apologize', t.id, playerId);
+		})
+
+		//
+		.then(function(){
+
+			if (t.playerDecision == 'willcome' && t.status == 'completed'){
+
+				// Update the status of the training to be 'gathering'.
+				TrainingService.updateForId({status: 'gathering'})
+
+				// Add an activity saying that the training is not completed w/ notifying players.
+				.then(function(){
+					return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-not-completed'});
+				})
+
+				// Subset the best player if any.
+				.then(function(activity){
+					return TrainingService.subsetBestPlayerForId(t.id);
+				});
+			}
+
+			// Just to assure that the promise has been fullfilled.
+			return true;
+		})
+	},
+
+	//
+	subsetBestPlayerForId: function(id){
+
+		//
+		var queryGetTrainingSubsetPlayers = db.format('select * from trainingPlayers where trainingId = ? and decision = \'register-as-subset\' order by coalesce(modifiedAt, createdAt)', [id]);
+
+		//
+		return db.query(queryGetTrainingSubsetPlayers)
+
+		//
+		.then(function(subsetPlayers){
+
+			//
+			if (subsetPlayers.length == 0){
+				console.log('No subset players have been found.');
+				return true;
+			}
+
+			//
+			var subsetPlayer = subsetPlayers[0];
+
+			//
+			return TrainingService.decideForPlayerIdToComeToId(subsetPlayer.playerId, id, true);
+		});
+	}
 };
 
 var TrainingPlayerService = {
@@ -2105,7 +2199,7 @@ router.get('/trainings/:id/willcome', authenticatable, function(request, respons
 
 	//
 	.then(function(user){
-		return TrainingService.decideForPlayerIdToComeToId(user.playerId, id);
+		return TrainingService.decideForPlayerIdToComeToId(user.playerId, id, false);
 	})
 
 	// Response about it.
@@ -2549,8 +2643,12 @@ console.log('App active on localhost:' + port);
 // 	console.log(activities);
 // });
 
-TrainingService.decideForPlayerIdToComeToId(1, 1)
-.then(function(done){
-	console.log('The player id has decided to come to the id.');
-});
+// TrainingService.decideForPlayerIdToComeToId(1, 1, false)
+// .then(function(done){
+// 	console.log('The player id has decided to come to the id.');
+// });
 
+// TrainingService.decideForPlayerIdToApologizeToId(1, 1)
+// .then(function(done){
+// 	console.log('The player id has decided to apologize to the id.');
+// });
