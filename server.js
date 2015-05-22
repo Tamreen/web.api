@@ -2217,10 +2217,7 @@ router.get('/trainings/:id/willcome', authenticatable, function(request, respons
 // GET /trainings/:id/apologize
 router.get('/trainings/:id/apologize', authenticatable, function(request, response){
 
-	// Get the user token.
-
-	var token = request.get('X-User-Token');
-
+	//
 	if (!validator.isNumeric(request.params.id)){
 		response.status(400).send({
 			'message': 'Bad request.',
@@ -2228,208 +2225,27 @@ router.get('/trainings/:id/apologize', authenticatable, function(request, respon
 		return;
 	}
 
+	//
 	var id = request.params.id;
 
-	// Check if the training is canceled and the user is a player in it.
-	db.query('select userTrainings.*, (select count(id) from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.decision = \'register-as-subset\') registerAsSubsetPlayersCount, (select count(id) > 0 as decided from trainingPlayers where trainingPlayers.trainingId = userTrainings.id and trainingPlayers.playerId = userTrainings.playerId and trainingPlayers.decision = \'apologize\') as decided from (select trainings.*, userGroups.playerId from trainings, (select groups.id as groupId, groupPlayers.playerId from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.token = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups where userGroups.groupId in (trainings.groupId) and trainings.id = ? and trainings.status <> \'canceled\') as userTrainings;', [token, id], function(error, rows){
+	//
+	UserService.findCurrentOrDie(request)
 
-		if (error){
-			console.error(error.stack);
-			response.status(500).send({
-				'message': 'Internal server error in userTrainings.',
-			});
-			return;
-		}
+	//
+	.then(function(user){
+		return TrainingService.decideForPlayerIdToApologizeToId(user.playerId, id);
+	})
 
-		if (rows.length == 0){
-			response.status(401).send({
-				'message': 'Not authorized to access this route.'
-			});
-			return;
-		}
+	// Response about it.
+	.then(function(){
+		return response.status(204).send();
+	})
 
-		// Define the training.
-		var training = rows[0];
-
-		// Check if the user already apologized.
-		if (training.decided == true){
-			response.status(400).send({
-				'message': 'You already have decided.'
-			});
-			return;
-		}
-
-		var insertTrainingActivityParameters = {trainingId: training.id, authorId: training.playerId, type: 'player-apologized', createdAt: new Date()};
-
-		db.query('insert into trainingActivities set ?', [insertTrainingActivityParameters], function(error, insertTrainingActivityResult){
-
-			if (error){
-				console.error(error.stack);
-				response.status(500).send({
-					'message': 'Internal server error in trainingActivities.',
-				});
-				return;
-			}
-
-			// Check if the user apologized for the first time, nothing after.
-			db.query('select * from trainingPlayers where trainingId = ? and playerId = ?', [training.id, training.playerId], function(error, trainingPlayerRows){
-
-				if (error){
-					console.error(error.stack);
-					response.status(500).send({
-						'message': 'Internal server error in trainingPlayers.',
-					});
-					return;
-				}
-
-				// Done.
-				response.status(204).send();
-
-				// Do tell.
-				console.log('Training activity #' + insertTrainingActivityResult.insertId + ' has been created successfully.');
-
-				// Notify training players about it.
-				activity.notify(insertTrainingActivityResult.insertId);
-
-				if (trainingPlayerRows.length == 0){
-
-					var insertTrainingPlayerParameters = {trainingId: training.id, playerId: training.playerId, decision: 'apologize', createdAt: new Date()};
-
-						db.query('insert into trainingPlayers set ?', [insertTrainingPlayerParameters], function(error, insertTrainingPlayerResult){
-
-							if (error){
-								console.error(error.stack);
-								return;
-							}
-						});
-
-					return;
-				}
-
-				// Get a training player.
-				trainingPlayer = trainingPlayerRows[0];
-
-				// Check if the user apologized for the second time and is registered as a subset, nothing after.
-				if (trainingPlayer.decision == 'register-as-subset'){
-
-					// Update it then.
-					var updateTrainingPlayerParameters = {decision: 'apologize', modifiedAt: new Date()};
-
-					db.query('update trainingPlayers set ? where trainingId = ? and playerId = ?', [updateTrainingPlayerParameters, training.id, training.playerId], function(error, updateTrainingPlayerResult){
-
-						if (error){
-							console.error(error.stack);
-							return;
-						}
-					});
-
-					return;
-				}
-
-				// Check if the user apologized for the second time and is willcome, notify that the training is not completed.
-				if (trainingPlayer.decision == 'willcome'){
-
-					// Update training player to apologize.
-					var updateTrainingPlayerParameters = {decision: 'apologize', modifiedAt: new Date()};
-
-					db.query('update trainingPlayers set ? where trainingId = ? and playerId = ?', [updateTrainingPlayerParameters, training.id, training.playerId], function(error, updateTrainingPlayerResult){
-
-						if (error){
-							console.error(error.stack);
-							return;
-						}
-
-						// Update the training status to gathering.
-						var updateTrainingParameters = {status: 'gathering', modifiedAt: new Date()};
-
-						db.query('update trainings set ? where id = ?', [updateTrainingParameters, training.id], function(error, updateTrainingResult){
-
-							if (error){
-								console.error(error.stack);
-								return;
-							}
-
-							if (training.status == 'completed'){
-
-								// Insert an activity saying training is not complete.
-								var insertTrainingNotCompleteActivityParameters = {trainingId: training.id, authorId: training.playerId, type: 'training-not-completed', createdAt: new Date()};
-
-								db.query('insert into trainingActivities set ?', [insertTrainingNotCompleteActivityParameters], function(error, insertTrainingNotCompleteActivityResult){
-
-									if (error){
-										console.error(error.stack);
-										return;
-									}
-
-									// Do tell.
-									console.log('Training activity #' + insertTrainingNotCompleteActivityResult.insertId + ' has been created successfully.');
-
-									// Notify training players about it.
-									activity.notify(insertTrainingNotCompleteActivityResult.insertId);
-
-									// Check if there is a near by subset player.
-									db.query('select * from trainingPlayers where trainingId = ? and decision = \'register-as-subset\' order by coalesce(modifiedAt, createdAt)', [training.id], function(error, trainingSubsetPlayerRows){
-
-										if (error){
-											console.error(error.stack);
-											return;
-										}
-
-										if (trainingSubsetPlayerRows.length == 0){
-											console.log('No subset players have been found.');
-											return;
-										}
-
-										trainingSubsetPlayer = trainingSubsetPlayerRows[0];
-
-										// Let the first subset player decides to come.
-										var insertTrainingActivityWillcomeParameters = {trainingId: training.id, authorId: trainingSubsetPlayer.playerId, type: 'player-decided-to-come', createdAt: new Date()};
-
-										db.query('insert into trainingActivities set ?', [insertTrainingActivityWillcomeParameters], function(error, insertTrainingActivityWillcomeResult){
-
-											if (error){
-												console.error(error.stack);
-												return;
-											}
-
-											// TrainingPlayer.
-											var updateTrainingPlayerWillcomeParameters = {decision: 'willcome', modifiedAt: new Date()};
-
-											db.query('update trainingPlayers set ? where trainingId = ? and playerId = ?', [updateTrainingPlayerWillcomeParameters, training.id, trainingSubsetPlayer.playerId], function(error, updateTrainingPlayerWillcomeResult){
-
-												// Notify that the player will come.
-												activity.notify(insertTrainingActivityWillcomeResult.insertId);
-
-												// Activity, training is completed.
-												var insertCompletedTrainingActivityParameters = {trainingId: training.id, authorId: trainingSubsetPlayer.playerId, type: 'training-completed', createdAt: new Date()};
-
-												db.query('insert into trainingActivities set ?', [insertCompletedTrainingActivityParameters], function(error, insertCompletedTrainingActivityResult){
-
-													if (error){
-														console.error(error.stack);
-														return;
-													}
-
-													// Training is completed.
-													var updateTrainingCompletedParameters = {status: 'completed', modifiedAt: new Date()};
-
-													db.query('update trainings set ? where id = ?', [updateTrainingCompletedParameters, training.id], function(error, updateTrainingCompletedResult){
-
-														// Notify.
-														activity.notify(insertCompletedTrainingActivityResult.insertId);
-													});
-												});
-											});
-										});
-									});
-								});	
-							}
-						});
-					});
-				}
-			});
-		});
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /trainings/:id/cancel
