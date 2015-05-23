@@ -687,7 +687,7 @@ var GroupService = {
 	//
 	listPlayersByIdForPlayerId: function(id, playerId){
 
-		var queryListPlayersForGroupIdAndPlayerId = db.format('select players.id, players.fullname, groupPlayers.joinedAt from groupPlayers, players where groupPlayers.playerId = players.id and groupPlayers.leftAt is null and groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null)', [playerId, id]);
+		var queryListPlayersForGroupIdAndPlayerId = db.format('select players.id, players.fullname, groupPlayers.role, groupPlayers.joinedAt from groupPlayers, players where groupPlayers.playerId = players.id and groupPlayers.leftAt is null and groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null)', [playerId, id]);
 
 		return db.query(queryListPlayersForGroupIdAndPlayerId);
 	},
@@ -824,7 +824,7 @@ var GroupService = {
 		.then(function(groupPlayers){
 
 			if (groupPlayers.length == 0){
-				throw new BadRequestError('Cannot find the specified group or player.');
+				throw new BadRequestError('لا يُمكن حذف اللاعب من المجموعة ربما لكونه ليس عضوًا فيها أو لكونه مديرًا لها.');
 			}
 
 			//
@@ -832,6 +832,30 @@ var GroupService = {
 
 			//
 			var updateGroupPlayerParameters = {leftAt: new Date()};
+			return GroupPlayerService.updateForId(updateGroupPlayerParameters, groupPlayer.id);
+		});
+	},
+
+	//
+	adminizePlayerIdByAdminPlayerIdInId: function(playerId, adminPlayerId, id){
+
+		var queryFindGroupPlayer = db.format('select groupPlayers.id from groupPlayers where groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\') and groupPlayers.playerId = ? and groupPlayers.role <> \'admin\' and groupPlayers.leftAt is null', [adminPlayerId, id, playerId]);
+
+		//
+		return db.query(queryFindGroupPlayer)
+
+		//
+		.then(function(groupPlayers){
+
+			if (groupPlayers.length == 0){
+				throw new BadRequestError('لا يُمكن إضافة اللاعب إلى المدراء ربما لكونه ليس عضوًا في هذه المجموعة أو لكونه مديرًا لها.');
+			}
+
+			//
+			var groupPlayer = groupPlayers[0];
+
+			//
+			var updateGroupPlayerParameters = {role: 'admin'};
 			return GroupPlayerService.updateForId(updateGroupPlayerParameters, groupPlayer.id);
 		});
 	},
@@ -1139,6 +1163,8 @@ var TrainingService = {
 				throw new BadRequestError('The training is already canceled.');
 			}
 
+			// TODO: Check if the attending time for the training has ended.
+
 			// Check if the player id has decided.
 			if (t.playerDecision == 'willcome' || (t.playerDecision == 'register-as-subset' && evenIfWasSubset == false)){
 				throw new BadRequestError('The player id already has decided.');
@@ -1225,6 +1251,8 @@ var TrainingService = {
 			if (t.status == 'canceled'){
 				throw new BadRequestError('The training is already canceled.');
 			}
+
+			// TODO: Check if the attending time for the training has ended.
 
 			// Check if the player id has decided.
 			if (t.playerDecision == 'apologize'){
@@ -1626,8 +1654,6 @@ var FeedbackService = {
 // Check if the user is logged in or response with a not autherized error.
 function authenticatable(request, response, next){
 
-	console.log('Authentication has been called.');
-
 	if (validator.isNull(request.get('X-User-Token'))){
 		return response.status(401).send({
 			'message': 'Not authorized to access this resource.',
@@ -1645,8 +1671,6 @@ function authenticatable(request, response, next){
 	// Update the device type and token if given.
 	.then(function(user){
 
-		console.log('The user has been found.');
-
 		if (!validator.isNull(deviceType) && !validator.isNull(deviceToken) && !validator.equals(deviceToken, 'null')){
 
 			// Check if the old information is the same.
@@ -1662,7 +1686,6 @@ function authenticatable(request, response, next){
 
 	// Response about it.
 	.then(function(done){
-		console.log('Go to the next route.');
 		return next();
 	})
 
@@ -2070,6 +2093,39 @@ router.get('/groups/:groupId/players/:id/delete', authenticatable, function(requ
 	});
 });
 
+// GET /groups/:groupId/players/:id/adminize
+router.get('/groups/:groupId/players/:id/adminize', authenticatable, function(request, response){
+
+	if (!validator.isNumeric(request.params.groupId) || !validator.isNumeric(request.params.id)){
+		response.status(400).send({
+			'message': 'Invalid inputs.',
+		});
+		return;
+	}
+
+	// Define variables to be used.
+	var groupId = request.params.groupId; 
+	var id = request.params.id;
+
+	//
+	UserService.findCurrentOrDie(request)
+
+	//
+	.then(function(user){
+		return GroupService.adminizePlayerIdByAdminPlayerIdInId(id, user.playerId, groupId);
+	})
+
+	// Response about it.
+	.then(function(groupPlayer){
+		return response.status(204).send();
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+});
+
 // GET /groups/:groupId/trainings
 router.get('/groups/:groupId/trainings', authenticatable, function(request, response){
 
@@ -2403,7 +2459,7 @@ console.log('App active on localhost:' + port);
 
 // GroupService.checkIsPlayerIdAdminForIdOrDie(3, 6);
 
-// GroupService.addPlayerToId('+1', 'Hussam Al-Zughaibi', 1).then(function(playerGroup){
+// GroupService.addPlayerToId('+1', 'Hussam Al-Zughaibi', 104).then(function(playerGroup){
 // 	console.log(playerGroup);
 // });
 
