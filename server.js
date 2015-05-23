@@ -1,4 +1,10 @@
 
+// TODO: Libraries required by configurations.
+// TODO: Configurations needed.
+// TODO: Libraries not related to anything.
+// TODO: Services to be used.
+// TODO: Routes.
+
 var Promise = require('bluebird');
 var using = Promise.using;
 
@@ -55,8 +61,8 @@ var pool = mysql.createPool({
 	database: nconf.get('databaseName'),
 });
 
-// TODO: This should be service.
-var db = {
+//
+var DatabaseService = {
 
 	getConnection: function(){
 		return pool.getConnectionAsync().disposer(function(connection){
@@ -65,7 +71,7 @@ var db = {
 	},
 
 	query: function(command){
-		return using(db.getConnection(), function(connection){
+		return using(DatabaseService.getConnection(), function(connection){
 			return connection.queryAsync(command).then(function(results){
 				// Return only the rows, no need for fields for now.
 				return results[0];
@@ -116,7 +122,8 @@ var port = 4000;
 moment.locale('ar-sa');
 
 // This should be a service.
-var SMS = {
+var SmsService = {
+
 	send: function(to, message){
 
 		if (nconf.get('environment') == 'development'){
@@ -136,11 +143,11 @@ var SMS = {
 				console.dir(response);
 			}
 		});
-	}
+	},
 };
 
 // This should be a service.
-var pushNotification = {
+var PushNotification = {
 
 	toAndroid: function(message, registrationIds){
 
@@ -183,117 +190,6 @@ var pushNotification = {
 		}catch (exception){
 			console.log(exception);
 		}
-	}
-};
-
-// This should be a service.
-var activity = {
-
-	toString: function(type, authorFullname){
-
-		switch (type){
-
-			case 'training-started':
-				return 'بدأ التحضير للتمرين';
-			break;
-
-			case 'player-decided-to-come':
-				return authorFullname + ' قرّر أن يحضر';
-			break;
-
-			case 'player-registered-as-subset':
-				return authorFullname + ' سجّل كاحتياط';
-			break;
-
-			case 'player-apologized':
-				return authorFullname + ' اعتذر عن الحضور';
-			break;
-
-			case 'training-completed':
-				return 'اكتمل التحضير للتمرين';
-			break;
-
-			case 'training-canceled':
-				return 'أُلغي التمرين';
-			break;
-
-			case 'training-not-completed':
-				return 'تحضير التمرين غير مُكتمل';
-			break;
-
-		}
-	},
-
-	notify: function(id){
-
-		console.log('Notify training players has been called.');
-
-		// Get the activity training players.
-		db.query('select users.*, trainings.name as trainingName, trainingActivities.type as type, (select players.fullname from players, trainingActivities where trainingActivities.authorId = players.id and trainingActivities.id = ?) as authorFullname from trainingActivities, trainings, groupPlayers, users where trainingActivities.trainingId = trainings.id and trainings.groupId = groupPlayers.groupId and groupPlayers.playerId = users.playerId and groupPlayers.leftAt is null and trainingActivities.id = ?', [id, id], function(error, users){
-
-			if (error){
-				console.error(error.stack);
-				return;
-			}
-
-			if (users.length == 0){
-				console.log('No users have been found to recieve this activity.');
-				return;
-			}
-
-			// var androidIds = [];
-			// var iosIds = [];
-			var activityAuthor = users[0];
-
-			// Set the android message.
-			var androidMessage = new gcm.Message({
-				collapseKey: 'trainingActivity',
-				timeToLive: 3000,
-				data: {
-					message: 'تمرين ' + activityAuthor.trainingName,
-					title: activity.toString(activityAuthor.type, activityAuthor.authorFullname),
-					notId: Math.floor(Math.random()*900000000) + 100000000,
-				}
-			});
-
-			// Set the ios message.
-			var iosMessage = activity.toString(activityAuthor.type, activityAuthor.authorFullname);
-
-			// Add activityPlayers.
-			users.forEach(function(user){
-
-				var insertActivityPlayerParameters = {activityId: id, playerId: user.playerId, createdAt: new Date()};
-				db.query('insert into activityPlayers set ?', [insertActivityPlayerParameters], function(error, result){
-
-					if (error){
-						console.error(error.stack);
-						return;
-					}
-
-					console.log('Add player #' + user.playerId);
-
-					if (validator.isNull(user.deviceToken)){
-						return;
-					}
-
-					// Android.
-					if (validator.equals(user.deviceType, 'android')){
-						pushNotification.toAndroid(androidMessage, [user.deviceToken]);
-					}
-
-					// Ios.
-					if (validator.equals(user.deviceType, 'ios')){
-						pushNotification.toIos(iosMessage, [user.deviceToken]);
-					}
-				});
-			});
-
-			// Check the android devices.
-			// androidIds.forEach(function(androidId){
-			// 	pushNotification.toAndroid(androidMessage, registrationIds);
-			// });
-
-		});		
 	}
 };
 
@@ -377,9 +273,9 @@ var UserService = {
 			}
 
 			// Search for a user with the given token.
-			var queryfindCurrentOrDieUser = db.format('select * from users where token = ? and token is not null limit 1', [token]);
+			var queryfindCurrentOrDieUser = DatabaseService.format('select * from users where token = ? and token is not null limit 1', [token]);
 
-			db.query(queryfindCurrentOrDieUser).then(function(users){
+			DatabaseService.query(queryfindCurrentOrDieUser).then(function(users){
 				
 				if (users.length == 0){
 					return reject(new NotFoundError('The user cannot be found.'));
@@ -414,9 +310,9 @@ var UserService = {
 	//
 	findById: function(id){
 
-		var queryGetUserById = db.format('select * from users where id = ? limit 1', [id]);
+		var queryGetUserById = DatabaseService.format('select * from users where id = ? limit 1', [id]);
 		
-		return db.query(queryGetUserById).then(function(users){
+		return DatabaseService.query(queryGetUserById).then(function(users){
 
 			if (users.length == 0){
 				return null;
@@ -430,9 +326,9 @@ var UserService = {
 	//
 	findByE164formattedMobileNumber: function(e164formattedMobileNumber){
 
-		var queryGetUserByE164formattedMobileNumber = db.format('select * from users where e164formattedMobileNumber = ? limit 1', [e164formattedMobileNumber]);
+		var queryGetUserByE164formattedMobileNumber = DatabaseService.format('select * from users where e164formattedMobileNumber = ? limit 1', [e164formattedMobileNumber]);
 		
-		return db.query(queryGetUserByE164formattedMobileNumber).then(function(users){
+		return DatabaseService.query(queryGetUserByE164formattedMobileNumber).then(function(users){
 
 			if (users.length == 0){
 				return null;
@@ -481,9 +377,9 @@ var UserService = {
 			parameters.createdAt = new Date();
 			parameters.playerId = player.id;
 
-			var queryInsertUser = db.format('insert into users set ?', parameters);
+			var queryInsertUser = DatabaseService.format('insert into users set ?', parameters);
 			
-			return db.query(queryInsertUser);
+			return DatabaseService.query(queryInsertUser);
 		})
 
 		//
@@ -492,7 +388,7 @@ var UserService = {
 			if (invited){
 
 				// Send an invited SMS for the created player.
-				SMS.send(parameters.e164formattedMobileNumber, 'تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من أبل ستور ' + nconf.get('appleStoreUrl') + ' أو قوقل بلاي ' + nconf.get('googlePlayUrl'));
+				SmsService.send(parameters.e164formattedMobileNumber, 'تطبيق تمرين - تمت إضافتك إلى مجموعة لعب، تفضّل بتحميل التطبيق من أبل ستور ' + nconf.get('appleStoreUrl') + ' أو قوقل بلاي ' + nconf.get('googlePlayUrl'));
 			}
 
 			return UserService.findById(insertUserResult.insertId);
@@ -506,9 +402,9 @@ var UserService = {
 		//
 		parameters.modifiedAt = new Date();
 
-		var queryUpdateUserById = db.format('update users set ? where id = ?', [parameters, id]);
+		var queryUpdateUserById = DatabaseService.format('update users set ? where id = ?', [parameters, id]);
 		
-		return db.query(queryUpdateUserById)
+		return DatabaseService.query(queryUpdateUserById)
 
 		.then(function(updateUserByIdResult){
 			return UserService.findById(id);
@@ -519,8 +415,8 @@ var UserService = {
 	logout: function(user){
 		
 		var updateUserParameters = {token: null, modifiedAt: new Date()};
-		var queryUpdateUser = db.format('update users set ? where token = ?', [updateUserParameters, user.token]);
-		return db.query(queryUpdateUser);
+		var queryUpdateUser = DatabaseService.format('update users set ? where token = ?', [updateUserParameters, user.token]);
+		return DatabaseService.query(queryUpdateUser);
 	},
 };
 
@@ -529,9 +425,9 @@ var PlayerService = {
 	//
 	findById: function(id){
 
-		var queryGetPlayerById = db.format('select * from players where id = ? limit 1', [id]);
+		var queryGetPlayerById = DatabaseService.format('select * from players where id = ? limit 1', [id]);
 		
-		return db.query(queryGetPlayerById).then(function(players){
+		return DatabaseService.query(queryGetPlayerById).then(function(players){
 
 			if (players.length == 0){
 				return null;
@@ -544,9 +440,9 @@ var PlayerService = {
 
 	create: function(parameters){
 
-		var queryInsertPlayer = db.format('insert into players set ?', parameters);
+		var queryInsertPlayer = DatabaseService.format('insert into players set ?', parameters);
 		
-		return db.query(queryInsertPlayer)
+		return DatabaseService.query(queryInsertPlayer)
 
 		.then(function(insertPlayerResult){
 			return PlayerService.findById(insertPlayerResult.insertId);
@@ -559,9 +455,9 @@ var PlayerService = {
 		//
 		parameters.modifiedAt = new Date();
 
-		var queryUpdatePlayerById = db.format('update players set ? where id = ?', [parameters, id]);
+		var queryUpdatePlayerById = DatabaseService.format('update players set ? where id = ?', [parameters, id]);
 		
-		return db.query(queryUpdatePlayerById)
+		return DatabaseService.query(queryUpdatePlayerById)
 
 		.then(function(updatePlayerByIdResult){
 			return PlayerService.findById(id);
@@ -574,9 +470,9 @@ var GroupService = {
 	//
 	findById: function(id){
 
-		var queryGetGroupById = db.format('select * from groups where id = ? limit 1', [id]);
+		var queryGetGroupById = DatabaseService.format('select * from groups where id = ? limit 1', [id]);
 		
-		return db.query(queryGetGroupById).then(function(groups){
+		return DatabaseService.query(queryGetGroupById).then(function(groups){
 
 			if (groups.length == 0){
 				return null;
@@ -591,17 +487,17 @@ var GroupService = {
 	// TODO: This should be ordered by latest activities.
 	listForPlayerId: function(playerId){
 
-		var queryListGroupsForPlayerId = db.format('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [playerId]);
+		var queryListGroupsForPlayerId = DatabaseService.format('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [playerId]);
 
-		return db.query(queryListGroupsForPlayerId);
+		return DatabaseService.query(queryListGroupsForPlayerId);
 	},
 
 	// TODO: The query that is inside should be easier.
 	findByIdForPlayerId: function(id, playerId){
 
-		var queryFindGroupByIdForPlayerId = db.format('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [playerId, id]);
+		var queryFindGroupByIdForPlayerId = DatabaseService.format('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [playerId, id]);
 
-		return db.query(queryFindGroupByIdForPlayerId).then(function(groups){
+		return DatabaseService.query(queryFindGroupByIdForPlayerId).then(function(groups){
 
 			if (groups.length == 0){
 				return null;
@@ -618,9 +514,9 @@ var GroupService = {
 		// Add created at and player id parameters.
 		parameters.createdAt = new Date();
 
-		var queryInsertGroup = db.format('insert into groups set ?', parameters);
+		var queryInsertGroup = DatabaseService.format('insert into groups set ?', parameters);
 
-		return db.query(queryInsertGroup)
+		return DatabaseService.query(queryInsertGroup)
 
 		//
 		.then(function(insertGroupResult){
@@ -629,10 +525,10 @@ var GroupService = {
 			var groupId = insertGroupResult.insertId;
 
 			var insertGroupPlayerParameters = {groupId: groupId, playerId: parameters.authorId, role: 'admin', joinedAt: new Date()};
-			var queryInsertGroupPlayer = db.format('insert into groupPlayers set ?', insertGroupPlayerParameters);
+			var queryInsertGroupPlayer = DatabaseService.format('insert into groupPlayers set ?', insertGroupPlayerParameters);
 
 			//
-			return db.query(queryInsertGroupPlayer);
+			return DatabaseService.query(queryInsertGroupPlayer);
 		})
 
 		//
@@ -649,10 +545,10 @@ var GroupService = {
 		return new Promise(function(resolve, reject){
 
 			// Check if the user is admin or not in that group.
-			var queryGetGroupPlayer = db.format('select * from groupPlayers where groupId = ? and playerId = ?', [id, playerId]);
+			var queryGetGroupPlayer = DatabaseService.format('select * from groupPlayers where groupId = ? and playerId = ?', [id, playerId]);
 
 			// Execute the query.
-			db.query(queryGetGroupPlayer)
+			DatabaseService.query(queryGetGroupPlayer)
 
 			//
 			.then(function(groupPlayers){
@@ -669,9 +565,9 @@ var GroupService = {
 				}
 
 				var updateGroupPlayerParameters = {leftAt: new Date()};
-				var queryUpdateGroupPlayer = db.format('update groupPlayers set ? where groupId = ? and playerId = ?', [updateGroupPlayerParameters, id, playerId]);
+				var queryUpdateGroupPlayer = DatabaseService.format('update groupPlayers set ? where groupId = ? and playerId = ?', [updateGroupPlayerParameters, id, playerId]);
 
-				return db.query(queryUpdateGroupPlayer);
+				return DatabaseService.query(queryUpdateGroupPlayer);
 			})
 
 			//
@@ -687,9 +583,9 @@ var GroupService = {
 	//
 	listPlayersByIdForPlayerId: function(id, playerId){
 
-		var queryListPlayersForGroupIdAndPlayerId = db.format('select players.id, players.fullname, groupPlayers.role, groupPlayers.joinedAt from groupPlayers, players where groupPlayers.playerId = players.id and groupPlayers.leftAt is null and groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null)', [playerId, id]);
+		var queryListPlayersForGroupIdAndPlayerId = DatabaseService.format('select players.id, players.fullname, groupPlayers.role, groupPlayers.joinedAt from groupPlayers, players where groupPlayers.playerId = players.id and groupPlayers.leftAt is null and groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null)', [playerId, id]);
 
-		return db.query(queryListPlayersForGroupIdAndPlayerId);
+		return DatabaseService.query(queryListPlayersForGroupIdAndPlayerId);
 	},
 
 	//
@@ -698,10 +594,10 @@ var GroupService = {
 		return new Promise(function(resolve, reject){
 
 			// Check if the user is admin or not in that group.
-			var queryGetGroupPlayer = db.format('select * from groupPlayers where groupId = ? and playerId = ?', [id, playerId]);
+			var queryGetGroupPlayer = DatabaseService.format('select * from groupPlayers where groupId = ? and playerId = ?', [id, playerId]);
 
 			// Execute the query.
-			db.query(queryGetGroupPlayer)
+			DatabaseService.query(queryGetGroupPlayer)
 
 			//
 			.then(function(groupPlayers){
@@ -719,9 +615,9 @@ var GroupService = {
 
 				//
 				var updateGroupParameters = {deletedAt: new Date()};
-				var queryUpdateGroup = db.format('update groups set ? where id = ?', [updateGroupParameters, groupPlayer.groupId]);
+				var queryUpdateGroup = DatabaseService.format('update groups set ? where id = ?', [updateGroupParameters, groupPlayer.groupId]);
 				
-				return db.query(queryUpdateGroup);
+				return DatabaseService.query(queryUpdateGroup);
 			})
 
 			//
@@ -794,10 +690,10 @@ var GroupService = {
 		return new Promise(function(resolve, reject){
 
 			// Check if the user is admin.
-			var queryGetGroupPlayer = db.format('select groupPlayers.* from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [playerId, id])
+			var queryGetGroupPlayer = DatabaseService.format('select groupPlayers.* from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [playerId, id])
 
 			//
-			db.query(queryGetGroupPlayer)
+			DatabaseService.query(queryGetGroupPlayer)
 
 			//
 			.then(function(groupPlayers){
@@ -815,10 +711,10 @@ var GroupService = {
 	//
 	deletePlayerIdByAdminPlayerIdInId: function(playerId, adminPlayerId, id){
 
-		var queryFindGroupPlayer = db.format('select groupPlayers.id from groupPlayers where groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\') and groupPlayers.playerId = ? and groupPlayers.role <> \'admin\' and groupPlayers.leftAt is null', [adminPlayerId, id, playerId]);
+		var queryFindGroupPlayer = DatabaseService.format('select groupPlayers.id from groupPlayers where groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\') and groupPlayers.playerId = ? and groupPlayers.role <> \'admin\' and groupPlayers.leftAt is null', [adminPlayerId, id, playerId]);
 
 		//
-		return db.query(queryFindGroupPlayer)
+		return DatabaseService.query(queryFindGroupPlayer)
 
 		//
 		.then(function(groupPlayers){
@@ -839,10 +735,10 @@ var GroupService = {
 	//
 	adminizePlayerIdByAdminPlayerIdInId: function(playerId, adminPlayerId, id){
 
-		var queryFindGroupPlayer = db.format('select groupPlayers.id from groupPlayers where groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\') and groupPlayers.playerId = ? and groupPlayers.role <> \'admin\' and groupPlayers.leftAt is null', [adminPlayerId, id, playerId]);
+		var queryFindGroupPlayer = DatabaseService.format('select groupPlayers.id from groupPlayers where groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\') and groupPlayers.playerId = ? and groupPlayers.role <> \'admin\' and groupPlayers.leftAt is null', [adminPlayerId, id, playerId]);
 
 		//
-		return db.query(queryFindGroupPlayer)
+		return DatabaseService.query(queryFindGroupPlayer)
 
 		//
 		.then(function(groupPlayers){
@@ -867,9 +763,9 @@ var GroupPlayerService = {
 	//
 	findById: function(id){
 
-		var queryGetGroupPlayerById = db.format('select * from groupPlayers where id = ? limit 1', [id]);
+		var queryGetGroupPlayerById = DatabaseService.format('select * from groupPlayers where id = ? limit 1', [id]);
 		
-		return db.query(queryGetGroupPlayerById).then(function(groupPlayers){
+		return DatabaseService.query(queryGetGroupPlayerById).then(function(groupPlayers){
 
 			if (groupPlayers.length == 0){
 				return null;
@@ -883,9 +779,9 @@ var GroupPlayerService = {
 	//
 	findByGroupIdAndPlayerId: function(groupId, playerId){
 
-		var queryFindGroupPlayer = db.format('select * from groupPlayers where groupId = ? and playerId = ? limit 1', [groupId, playerId]);
+		var queryFindGroupPlayer = DatabaseService.format('select * from groupPlayers where groupId = ? and playerId = ? limit 1', [groupId, playerId]);
 
-		return db.query(queryFindGroupPlayer)
+		return DatabaseService.query(queryFindGroupPlayer)
 
 		//
 		.then(function(groupPlayers){
@@ -902,9 +798,9 @@ var GroupPlayerService = {
 	//
 	findPlayerGroupById: function(id){
 
-		var queryFindPlayerGroup = db.format('select fullname, groupPlayers.* from players, groupPlayers where groupPlayers.playerId = players.id and groupPlayers.id = ? limit 1', [id]);
+		var queryFindPlayerGroup = DatabaseService.format('select fullname, groupPlayers.* from players, groupPlayers where groupPlayers.playerId = players.id and groupPlayers.id = ? limit 1', [id]);
 
-		return db.query(queryFindPlayerGroup)
+		return DatabaseService.query(queryFindPlayerGroup)
 
 		.then(function(playerGroups){
 
@@ -923,9 +819,9 @@ var GroupPlayerService = {
 
 		parameters.joinedAt = new Date();
 
-		var queryInsertGroupPlayer = db.format('insert into groupPlayers set ?', parameters);
+		var queryInsertGroupPlayer = DatabaseService.format('insert into groupPlayers set ?', parameters);
 
-		return db.query(queryInsertGroupPlayer)
+		return DatabaseService.query(queryInsertGroupPlayer)
 
 		//
 		.then(function(insertGroupPlayerResult){
@@ -936,9 +832,9 @@ var GroupPlayerService = {
 	//
 	updateForId: function(parameters, id){
 
-		var queryUpdateGroupPlayerById = db.format('update groupPlayers set ? where id = ?', [parameters, id]);
+		var queryUpdateGroupPlayerById = DatabaseService.format('update groupPlayers set ? where id = ?', [parameters, id]);
 		
-		return db.query(queryUpdateGroupPlayerById)
+		return DatabaseService.query(queryUpdateGroupPlayerById)
 
 		.then(function(updateGroupPlayerByIdResult){
 			return GroupPlayerService.findById(id);
@@ -952,9 +848,9 @@ var TrainingService = {
 	//
 	findForPlayerIdById: function(playerId, id){
 
-		var queryGetTraining = db.format('select trainings.*, (select decision from trainingPlayers where trainingId = trainings.id and playerId = tp.playerId) as playerDecision, (select count(groupPlayers.id) > 0 from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = tp.playerId and groups.id = trainings.groupId and users.deletedAt is null and groups.deletedAt is null and groupPlayers.leftAt is null and groupPlayers.role = \'admin\') as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'register-as-subset\') subsetPlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'notyet\') as notyetPlayersCount from trainingPlayers tp, trainings where tp.trainingId = trainings.id and tp.playerId = ? and trainings.id = ?;', [playerId, id]);
+		var queryGetTraining = DatabaseService.format('select trainings.*, (select decision from trainingPlayers where trainingId = trainings.id and playerId = tp.playerId) as playerDecision, (select count(groupPlayers.id) > 0 from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = tp.playerId and groups.id = trainings.groupId and users.deletedAt is null and groups.deletedAt is null and groupPlayers.leftAt is null and groupPlayers.role = \'admin\') as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'register-as-subset\') subsetPlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'notyet\') as notyetPlayersCount from trainingPlayers tp, trainings where tp.trainingId = trainings.id and tp.playerId = ? and trainings.id = ?;', [playerId, id]);
 		
-		return db.query(queryGetTraining).then(function(trainings){
+		return DatabaseService.query(queryGetTraining).then(function(trainings){
 
 			if (trainings.length == 0){
 				return null;
@@ -982,9 +878,9 @@ var TrainingService = {
 
 	listForGroupIdAndPlayerId: function(groupId, playerId){
 
-		var queryListTrainingsForGroupIdAndPlayerId = db.format('select userTrainings.id, userTrainings.name, userTrainings.status, (select count(id) from activityPlayers where playerId = userTrainings.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId = userTrainings.id)) as activitiesCount from (select trainings.*, users.playerId as playerId from groupPlayers, users, groups, trainings where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null and trainings.groupId = groups.id) as userTrainings order by coalesce(userTrainings.modifiedAt, userTrainings.createdAt) desc', [playerId, groupId]);
+		var queryListTrainingsForGroupIdAndPlayerId = DatabaseService.format('select userTrainings.id, userTrainings.name, userTrainings.status, (select count(id) from activityPlayers where playerId = userTrainings.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId = userTrainings.id)) as activitiesCount from (select trainings.*, users.playerId as playerId from groupPlayers, users, groups, trainings where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null and trainings.groupId = groups.id) as userTrainings order by coalesce(userTrainings.modifiedAt, userTrainings.createdAt) desc', [playerId, groupId]);
 
-		return db.query(queryListTrainingsForGroupIdAndPlayerId);
+		return DatabaseService.query(queryListTrainingsForGroupIdAndPlayerId);
 	},
 
 	//
@@ -1001,10 +897,10 @@ var TrainingService = {
 		delete parameters.authorId;
 
 		//
-		var queryInsertTraining = db.format('insert into trainings set ?', parameters);
+		var queryInsertTraining = DatabaseService.format('insert into trainings set ?', parameters);
 
 		//
-		return db.query(queryInsertTraining)
+		return DatabaseService.query(queryInsertTraining)
 
 		//
 		.then(function(insertTrainingResult){
@@ -1027,9 +923,9 @@ var TrainingService = {
 	//
 	listPlayersById: function(id){
 
-		var queryListTrainingPlayers = db.format('select players.fullname, players.id, trainingPlayers.decision as decision from trainingPlayers, players where trainingPlayers.playerId = players.id and trainingPlayers.trainingId = ?', [id]);
+		var queryListTrainingPlayers = DatabaseService.format('select players.fullname, players.id, trainingPlayers.decision as decision from trainingPlayers, players where trainingPlayers.playerId = players.id and trainingPlayers.trainingId = ?', [id]);
 
-		return db.query(queryListTrainingPlayers);
+		return DatabaseService.query(queryListTrainingPlayers);
 	},
 
 	detailsByPlayerIdAndId: function(playerId, id){
@@ -1130,9 +1026,9 @@ var TrainingService = {
 		//
 		parameters.modifiedAt = new Date();
 
-		var queryUpdateTrainingById = db.format('update trainings set ? where id = ?', [parameters, id]);
+		var queryUpdateTrainingById = DatabaseService.format('update trainings set ? where id = ?', [parameters, id]);
 		
-		return db.query(queryUpdateTrainingById);
+		return DatabaseService.query(queryUpdateTrainingById);
 
 		// TODO: This could be fixed in a better way.
 	},
@@ -1303,10 +1199,10 @@ var TrainingService = {
 	subsetBestPlayerForId: function(id){
 
 		//
-		var queryGetTrainingSubsetPlayers = db.format('select * from trainingPlayers where trainingId = ? and decision = \'register-as-subset\' order by coalesce(modifiedAt, createdAt)', [id]);
+		var queryGetTrainingSubsetPlayers = DatabaseService.format('select * from trainingPlayers where trainingId = ? and decision = \'register-as-subset\' order by coalesce(modifiedAt, createdAt)', [id]);
 
 		//
-		return db.query(queryGetTrainingSubsetPlayers)
+		return DatabaseService.query(queryGetTrainingSubsetPlayers)
 
 		//
 		.then(function(subsetPlayers){
@@ -1330,9 +1226,9 @@ var TrainingPlayerService = {
 
 	//
 	findById: function(id){
-		var queryGetTrainingPlayer = db.format('select * from trainingPlayers where id = ? limit 1', [id]);
+		var queryGetTrainingPlayer = DatabaseService.format('select * from trainingPlayers where id = ? limit 1', [id]);
 		
-		return db.query(queryGetTrainingPlayer).then(function(trainingPlayers){
+		return DatabaseService.query(queryGetTrainingPlayer).then(function(trainingPlayers){
 
 			if (trainingPlayers.length == 0){
 				return null;
@@ -1346,9 +1242,9 @@ var TrainingPlayerService = {
 	//
 	findOrCreate: function(parameters){
 
-		var queryGetTrainingPlayer = db.format('select * from trainingPlayers where trainingId = ? and playerId = ? limit 1', [parameters.trainingId, parameters.playerId]);
+		var queryGetTrainingPlayer = DatabaseService.format('select * from trainingPlayers where trainingId = ? and playerId = ? limit 1', [parameters.trainingId, parameters.playerId]);
 
-		return db.query(queryGetTrainingPlayer)
+		return DatabaseService.query(queryGetTrainingPlayer)
 
 		.then(function(trainingPlayers){
 
@@ -1369,8 +1265,8 @@ var TrainingPlayerService = {
 		parameters.createdAt = new Date();
 
 		//
-		var queryInsertTrainingPlayer = db.format('insert into trainingPlayers set ?', [parameters]);
-		return db.query(queryInsertTrainingPlayer)
+		var queryInsertTrainingPlayer = DatabaseService.format('insert into trainingPlayers set ?', [parameters]);
+		return DatabaseService.query(queryInsertTrainingPlayer)
 
 		//
 		.then(function(insertTrainingPlayerResult){
@@ -1383,10 +1279,10 @@ var TrainingPlayerService = {
 
 		//
 		var updateTrainingPlayerParameters = {decision: decision, modifiedAt: new Date()};
-		var queryUpdateTrainingPlayerDecision = db.format('update trainingPlayers set ? where trainingId = ? and playerId = ?', [updateTrainingPlayerParameters, trainingId, playerId]);
+		var queryUpdateTrainingPlayerDecision = DatabaseService.format('update trainingPlayers set ? where trainingId = ? and playerId = ?', [updateTrainingPlayerParameters, trainingId, playerId]);
 		
 		// 
-		return db.query(queryUpdateTrainingPlayerDecision);
+		return DatabaseService.query(queryUpdateTrainingPlayerDecision);
 	}
 };
 
@@ -1395,9 +1291,9 @@ var ActivityPlayerService = {
 	//
 	findById: function(id){
 
-		var queryGetActivityPlayer = db.format('select * from activityPlayers where id = ? limit 1', [id]);
+		var queryGetActivityPlayer = DatabaseService.format('select * from activityPlayers where id = ? limit 1', [id]);
 		
-		return db.query(queryGetActivityPlayer).then(function(activityPlayers){
+		return DatabaseService.query(queryGetActivityPlayer).then(function(activityPlayers){
 
 			if (activityPlayers.length == 0){
 				return null;
@@ -1410,9 +1306,9 @@ var ActivityPlayerService = {
 
 	findOrCreate: function(parameters){
 
-		var queryGetActivityPlayer = db.format('select * from activityPlayers where activityId = ? and playerId = ? limit 1', [parameters.activityId, parameters.playerId]);
+		var queryGetActivityPlayer = DatabaseService.format('select * from activityPlayers where activityId = ? and playerId = ? limit 1', [parameters.activityId, parameters.playerId]);
 
-		return db.query(queryGetActivityPlayer)
+		return DatabaseService.query(queryGetActivityPlayer)
 
 		.then(function(activityPlayers){
 
@@ -1433,8 +1329,8 @@ var ActivityPlayerService = {
 		parameters.createdAt = new Date();
 
 		//
-		var queryInsertActivityPlayer = db.format('insert into activityPlayers set ?', [parameters]);
-		return db.query(queryInsertActivityPlayer)
+		var queryInsertActivityPlayer = DatabaseService.format('insert into activityPlayers set ?', [parameters]);
+		return DatabaseService.query(queryInsertActivityPlayer)
 
 		//
 		.then(function(insertActivityPlayerResult){
@@ -1460,10 +1356,10 @@ var ActivityPlayerService = {
 			var updateActivityPlayerParameters = {readable: 1, modifiedAt: new Date()};
 
 			//
-			var queryUpdateActivityPlayer = db.format('update activityPlayers set ? where activityId in (?) and readable = 0 and playerId = ?', [updateActivityPlayerParameters, ids, playerId]);
+			var queryUpdateActivityPlayer = DatabaseService.format('update activityPlayers set ? where activityId in (?) and readable = 0 and playerId = ?', [updateActivityPlayerParameters, ids, playerId]);
 
 			//
-			return db.query(queryUpdateActivityPlayer);
+			return DatabaseService.query(queryUpdateActivityPlayer);
 		});
 	},
 
@@ -1475,9 +1371,9 @@ var TrainingActivityService = {
 	//
 	findById: function(id){
 
-		var queryGetTrainingActivity = db.format('select trainingActivities.*, trainings.name as trainingName, players.fullname as authorFullname from trainingActivities, trainings, players where trainingActivities.trainingId = trainings.id and trainingActivities.authorId = players.id and trainingActivities.id = ? limit 1', [id]);
+		var queryGetTrainingActivity = DatabaseService.format('select trainingActivities.*, trainings.name as trainingName, players.fullname as authorFullname from trainingActivities, trainings, players where trainingActivities.trainingId = trainings.id and trainingActivities.authorId = players.id and trainingActivities.id = ? limit 1', [id]);
 		
-		return db.query(queryGetTrainingActivity).then(function(trainingActivities){
+		return DatabaseService.query(queryGetTrainingActivity).then(function(trainingActivities){
 
 			if (trainingActivities.length == 0){
 				return null;
@@ -1499,9 +1395,9 @@ var TrainingActivityService = {
 		parameters.createdAt = new Date();
 
 		//
-		var queryInsertTrainingActivity = db.format('insert into trainingActivities set ?', [parameters]);
+		var queryInsertTrainingActivity = DatabaseService.format('insert into trainingActivities set ?', [parameters]);
 		
-		return db.query(queryInsertTrainingActivity)
+		return DatabaseService.query(queryInsertTrainingActivity)
 
 		//
 		.then(function(insertTrainingActivityResult){
@@ -1566,10 +1462,10 @@ var TrainingActivityService = {
 	//
 	listActivityRecipientsById: function(id){
 
-		var querylistUsersForTrainingId = db.format('select users.*, players.fullname as fullname from trainingPlayers, users, players where trainingPlayers.playerId = users.playerId and players.id = users.playerId and trainingPlayers.trainingId = ?', [id]);
+		var querylistUsersForTrainingId = DatabaseService.format('select users.*, players.fullname as fullname from trainingPlayers, users, players where trainingPlayers.playerId = users.playerId and players.id = users.playerId and trainingPlayers.trainingId = ?', [id]);
 
 		//
-		return db.query(querylistUsersForTrainingId);
+		return DatabaseService.query(querylistUsersForTrainingId);
 	},
 
 	// TODO: This should return the description and the icon too.
@@ -1623,10 +1519,10 @@ var TrainingActivityService = {
 				throw new BadRequestError('The training cannot be found.');
 			}
 
-			var queryGetTrainingActivities = db.format('select trainingActivities.*, players.fullname as author from trainingActivities, players where trainingActivities.authorId = players.id and trainingActivities.trainingId = ? order by trainingActivities.createdAt asc', [training.id]);
+			var queryGetTrainingActivities = DatabaseService.format('select trainingActivities.*, players.fullname as author from trainingActivities, players where trainingActivities.authorId = players.id and trainingActivities.trainingId = ? order by trainingActivities.createdAt asc', [training.id]);
 
 			//
-			return db.query(queryGetTrainingActivities);
+			return DatabaseService.query(queryGetTrainingActivities);
 		})
 
 		//
@@ -1646,8 +1542,8 @@ var FeedbackService = {
 	send: function(content, authorId){
 
 		var insertFeedbackParameters = {authorId: authorId, content: content, createdAt: new Date()};
-		var queryInsertFeedback = db.format('insert into feedbacks set ?', [insertFeedbackParameters]);
-		return db.query(queryInsertFeedback);
+		var queryInsertFeedback = DatabaseService.format('insert into feedbacks set ?', [insertFeedbackParameters]);
+		return DatabaseService.query(queryInsertFeedback);
 	},
 };
 
@@ -1677,8 +1573,8 @@ function authenticatable(request, response, next){
 			if (!validator.equals(deviceType, user.deviceType) || !validator.equals(deviceToken, user.deviceToken)){
 
 				var updateUserParameters = {deviceType: deviceType, deviceToken: deviceToken, modifiedAt: new Date()};
-				var queryUpdateUser = db.format('update users set ? where id = ?', [updateUserParameters, user.id]);
-				return db.query(queryUpdateUser);
+				var queryUpdateUser = DatabaseService.format('update users set ? where id = ?', [updateUserParameters, user.id]);
+				return DatabaseService.query(queryUpdateUser);
 			}
 		}
 
@@ -1713,7 +1609,7 @@ router.post('/users/firsthandshake', function(request, response){
 		});
 	}
 
-	// Generate a random number (code) to be sent through an SMS.
+	// Generate a random number (code) to be sent through an SmsService.
 	var e164formattedMobileNumber = request.body.e164formattedMobileNumber;
 	var deviceType = request.get('X-User-Device-Type');
 	var deviceToken = request.get('X-User-Device-Token');
@@ -1730,7 +1626,7 @@ router.post('/users/firsthandshake', function(request, response){
 	response.status(204).send('/users/firsthandshake');
 
 	// Send the SMS containing the temporary code.
-	return SMS.send(e164formattedMobileNumber, 'تطبيق تمرين - كلمة المرور المؤقتة ' + code);
+	return SmsService.send(e164formattedMobileNumber, 'تطبيق تمرين - كلمة المرور المؤقتة ' + code);
 });
 
 // POST /users/secondhandshake
@@ -1869,9 +1765,14 @@ router.get('/groups/latest', authenticatable, function(request, response){
 // GET /groups
 router.get('/groups/:id', authenticatable, function(request, response){
 
-	var id = request.params.id;
+	if (!validator.isNumeric(request.params.id)){
+		response.status(400).send({
+			'message': 'Cannot understand the value of group id.',
+		});
+		return;
+	}
 
-	// TODO: There should be some validation in here.
+	var id = request.params.id;
 
 	UserService.findCurrentOrDie(request)
 
