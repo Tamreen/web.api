@@ -16,49 +16,93 @@ apn = require('apn');
 // 
 PushNotificationService = {
 
-	toAndroid: function(message, registrationIds){
+	//
+	pushMessageToUsers: function(message, users){
 
-		console.log('toAndroid has been called.');
+		//
+		var androidUsers = [];
+		var iosUsers = [];
 
-		// Set up the sender with you API key.
-		var sender = new gcm.Sender(nconf.get('gcmSender'));
+		//
+		return Promise.each(users, function(user){
+			
+			if (user.deviceType == 'android'){
+				return androidUsers.push(user);
+			}
 
-		// Send the message.
-		sender.send(message, registrationIds, 4, function(error, result){
-			console.log(registrationIds);
-			if(error) console.error(error);
-			else console.log(result);
+			if (user.deviceType == 'ios'){
+				return iosUsers.push(user);
+			}
+
+		})
+
+		//
+		.then(function(){
+
+			//
+			console.log('All promises have been fullfilled.');
+
+			//
+			console.log('users', users.length);
+			console.log('androidUsers', androidUsers.length);
+			console.log('iosUsers', iosUsers.length);
+
 		});
+
 	},
 
-	toIos: function(message, registrationIds){
+	//
+	createIosNotification: function(message){
 
-		console.log('toIos has been called.');
-
-		try{
-
-			var apnConnection = new apn.Connection(apnOptions);
-			var token = registrationIds[0];
-			var device = new apn.Device(token);
-
-			// Set the notification.
-			var notification = new apn.Notification();
-
-			notification.expiry = Math.floor(Date.now() / 1000) + 3600;
-			notification.badge = 3;
-			notification.sound = 'ping.aiff';
-			notification.alert = message;
-			notification.payload = {'messageFrom': 'Tamreen App'};
-
-			// Send the message.
-			apnConnection.pushNotification(notification, device);
-
-		}catch (exception){
-			console.log(exception);
-		}
 	},
 
-	test: function(){
-		console.log('This is a test to make something beautiful.');
-	}
+	//
+	createAndroidNotification: function(message){
+
+	},
+
+	// //
+	// toAndroid: function(message, registrationIds){
+
+	// 	console.log('toAndroid has been called.');
+
+	// 	// Set up the sender with you API key.
+	// 	var sender = new gcm.Sender(nconf.get('gcmSender'));
+
+	// 	// Send the message.
+	// 	sender.send(message, registrationIds, 4, function(error, result){
+	// 		console.log(registrationIds);
+	// 		if(error) console.error(error);
+	// 		else console.log(result);
+	// 	});
+	// },
+
+	// //
+	// toIos: function(message, registrationIds){
+
+	// 	console.log('toIos has been called.');
+
+	// 	try{
+
+	// 		var apnConnection = new apn.Connection(apnOptions);
+	// 		var token = registrationIds[0];
+	// 		var device = new apn.Device(token);
+
+	// 		// Set the notification.
+	// 		var notification = new apn.Notification();
+
+	// 		notification.expiry = Math.floor(Date.now() / 1000) + 3600;
+	// 		notification.badge = 3;
+	// 		notification.sound = 'ping.aiff';
+	// 		notification.alert = message;
+	// 		notification.payload = {'messageFrom': 'Tamreen App'};
+
+	// 		// Send the message.
+	// 		apnConnection.pushNotification(notification, device);
+
+	// 	}catch (exception){
+	// 		console.log(exception);
+	// 	}
+	// },
+
 };

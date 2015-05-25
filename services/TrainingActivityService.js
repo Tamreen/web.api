@@ -16,7 +16,10 @@ TrainingActivityService = {
 			var trainingActivity = trainingActivities[0];
 
 			// Add the description of the activity.
-			trainingActivity.description = TrainingActivityService.describe({type: trainingActivity.type, authorFullname: trainingActivity.authorFullname});
+			// trainingActivity.description = TrainingActivityService.describe({type: trainingActivity.type, authorFullname: trainingActivity.authorFullname});
+
+			// Elaborate the activity even more.
+			trainingActivity = TrainingActivityService.elaborate(trainingActivity);
 
 			return trainingActivity;
 		});
@@ -96,49 +99,52 @@ TrainingActivityService = {
 	//
 	listActivityRecipientsById: function(id){
 
-		var querylistUsersForTrainingId = DatabaseService.format('select users.*, players.fullname as fullname from trainingPlayers, users, players where trainingPlayers.playerId = users.playerId and players.id = users.playerId and trainingPlayers.trainingId = ?', [id]);
+		var querylistUsersForTrainingId = DatabaseService.format('select users.*, players.fullname as fullname from activityPlayers, users, players where activityPlayers.playerId = users.playerId and players.id = users.playerId and activityPlayers.activityId = ?', [id]);
 
 		//
 		return DatabaseService.query(querylistUsersForTrainingId);
 	},
 
-	// TODO: This should return the description and the icon too.
-	describe: function(parameters){
+	//
+	elaborate: function(trainingActivity){
 
 		//
-		var type = parameters.type;
-		var authorFullname = parameters.authorFullname;
+		trainingActivity.content = null;
+		trainingActivity.icon = null;
 
-		switch (type){
+		switch (trainingActivity.type){
 
 			case 'training-started':
-				return 'بدأ التحضير للتمرين';
+				trainingActivity.content = 'بدأ التحضير للتمرين';
 			break;
 
 			case 'player-decided-to-come':
-				return authorFullname + ' قرّر أن يحضر';
+				trainingActivity.content = trainingActivity.authorFullname + ' قرّر أن يحضر';
 			break;
 
 			case 'player-registered-as-subset':
-				return authorFullname + ' سجّل كاحتياط';
+				trainingActivity.content = trainingActivity.authorFullname + ' سجّل كاحتياط';
 			break;
 
 			case 'player-apologized':
-				return authorFullname + ' اعتذر عن الحضور';
+				trainingActivity.content = trainingActivity.authorFullname + ' اعتذر عن الحضور';
 			break;
 
 			case 'training-completed':
-				return 'اكتمل التحضير للتمرين';
+				trainingActivity.content = 'اكتمل التحضير للتمرين';
 			break;
 
 			case 'training-canceled':
-				return 'أُلغي التمرين';
+				trainingActivity.content = 'أُلغي التمرين';
 			break;
 
 			case 'training-not-completed':
-				return 'تحضير التمرين غير مُكتمل';
+				trainingActivity.content = 'تحضير التمرين غير مُكتمل';
 			break;
 		}
+
+		//
+		return trainingActivity;
 	},
 
 	//

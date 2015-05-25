@@ -1,4 +1,6 @@
 
+require('../server');
+
 // UserService.findByE164formattedMobileNumber('+1').then(function(user){
 // 	console.log('user is ', user);
 // });
@@ -42,6 +44,29 @@
 // .then(function(training){
 // 	console.log(training);
 // });
+
+//
+TrainingActivityService.findById(47)
+
+//
+.then(function(trainingActivity){
+	
+	TrainingActivityService.listActivityRecipientsById(trainingActivity.id)
+
+	//
+	.then(function(recipients){
+
+		console.log('recipients', recipients);
+
+		var message = {};
+
+		PushNotificationService.pushMessageToUsers(message, recipients);
+
+	});
+
+});
+
+
 
 // TrainingActivityService.notifyAboutId(1)
 // .then(function(done){

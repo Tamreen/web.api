@@ -63,14 +63,10 @@ GroupService = {
 			var queryInsertGroupPlayer = DatabaseService.format('insert into groupPlayers set ?', insertGroupPlayerParameters);
 
 			//
-			return DatabaseService.query(queryInsertGroupPlayer);
-		})
+			DatabaseService.query(queryInsertGroupPlayer);
 
-		//
-		.then(function(insertGroupPlayerResult){
-
-			return GroupService.findById(insertGroupPlayerResult.insertId);
-
+			//
+			return GroupService.findById(groupId);
 		});
 	},
 

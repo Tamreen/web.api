@@ -2,19 +2,19 @@
 // Define some errors.
 
 //
-function ApiError(message, statusCode){
+ApiError = function(message, statusCode){
 	this.message = message;
 	this.statusCode = statusCode;
 }
 
 //
-function NotFoundError(message){
+NotFoundError = function(message){
 	this.message = message;
 	this.statusCode = 404;
 }
 
 //
-function BadRequestError(message){
+BadRequestError = function(message){
 	this.message = message;
 	this.statusCode = 400;
 }

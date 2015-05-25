@@ -2,7 +2,6 @@ node_modules/
 certificates/apn/
 certificates/ssl/
 configs/
-test/
 
 npm-debug.log
 .DS_Store
