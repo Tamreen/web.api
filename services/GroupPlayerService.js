@@ -40,7 +40,7 @@ GroupPlayerService = {
 	//
 	findPlayerGroupById: function(id){
 
-		var queryFindPlayerGroup = DatabaseService.format('select groupPlayers.playerId as id, fullname from players, groupPlayers where groupPlayers.playerId = players.id and groupPlayers.id = ? limit 1', [id]);
+		var queryFindPlayerGroup = DatabaseService.format('select players.* from players, groupPlayers where groupPlayers.playerId = players.id and groupPlayers.id = ? limit 1', [id]);
 
 		return DatabaseService.query(queryFindPlayerGroup)
 
