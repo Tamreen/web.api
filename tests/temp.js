@@ -45,26 +45,26 @@ require('../server');
 // 	console.log(training);
 // });
 
-var message = null;
+// var message = null;
 
-//
-TrainingActivityService.findById(892)
+// //
+// TrainingActivityService.findById(892)
 
-//
-.then(function(trainingActivity){
+// //
+// .then(function(trainingActivity){
 
-	message = trainingActivity;
+// 	message = trainingActivity;
 
-	TrainingActivityService.listActivitySuggestedRecipientsById(trainingActivity.id)
+// 	TrainingActivityService.listActivitySuggestedRecipientsById(trainingActivity.id)
 
-	//
-	.then(function(recipients){
+// 	//
+// 	.then(function(recipients){
 
-		PushNotificationService.pushMessageToUsers(message, recipients);
+// 		PushNotificationService.pushMessageToUsers(message, recipients);
 		
-	});
+// 	});
 
-});
+// });
 
 
 
@@ -73,10 +73,10 @@ TrainingActivityService.findById(892)
 // 	console.log(done);
 // });
 
-// TrainingService.findForPlayerIdById(20, 15)
-// .then(function(training){
-// 	console.log(training);
-// });
+TrainingService.findForPlayerIdById(1, 117)
+.then(function(training){
+	console.log(training);
+});
 
 // TrainingService.listPlayersById(1)
 // .then(function(players){

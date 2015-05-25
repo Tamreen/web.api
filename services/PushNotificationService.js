@@ -124,23 +124,7 @@ PushNotificationService = {
 
 			});
 		}
-	}
-
-	// //
-	// toAndroid: function(message, registrationIds){
-
-	// 	console.log('toAndroid has been called.');
-
-	// 	// Set up the sender with you API key.
-	// 	var sender = new gcm.Sender(nconf.get('gcmSender'));
-
-	// 	// Send the message.
-	// 	sender.send(message, registrationIds, 4, function(error, result){
-	// 		console.log(registrationIds);
-	// 		if(error) console.error(error);
-	// 		else console.log(result);
-	// 	});
-	// },
+	},
 
 	// //
 	// toIos: function(message, registrationIds){

@@ -267,14 +267,12 @@ TrainingService = {
 				// If the training is completed, create activity and notify the players.
 				if (t.playersCount == t.willcomePlayersCount + 1){
 
-					console.log('The training is now completed.');
-
 					// Complete the training.
 					TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-completed'})
 
 					//
 					.then(function(completedActivity){
-						return TrainingService.updateForId({status: 'completed'});
+						return TrainingService.updateForId({status: 'completed'}, t.id);
 					});
 				}
 			}
@@ -339,7 +337,7 @@ TrainingService = {
 			if (t.playerDecision == 'willcome' && t.status == 'completed'){
 
 				// Update the status of the training to be 'gathering'.
-				TrainingService.updateForId({status: 'gathering'})
+				TrainingService.updateForId({status: 'gathering'}, t.id)
 
 				// Add an activity saying that the training is not completed w/ notifying players.
 				.then(function(){
