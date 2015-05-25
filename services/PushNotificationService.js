@@ -19,6 +19,8 @@ PushNotificationService = {
 	//
 	pushMessageToUsers: function(message, users){
 
+		// TODO: If the environment is development, the behavior should be different.
+
 		//
 		var androidUsers = [];
 		var iosUsers = [];
@@ -27,11 +29,11 @@ PushNotificationService = {
 		return Promise.each(users, function(user){
 			
 			if (user.deviceType == 'android'){
-				return androidUsers.push(user);
+				return androidUsers.push(user.deviceToken);
 			}
 
 			if (user.deviceType == 'ios'){
-				return iosUsers.push(user);
+				return iosUsers.push(user.deviceToken);
 			}
 
 		})
@@ -40,13 +42,13 @@ PushNotificationService = {
 		.then(function(){
 
 			//
-			console.log('All promises have been fullfilled.');
+			var iosNotification = PushNotificationService.createIosNotification(message);
+			var androidNotification = PushNotificationService.createAndroidNotification(message);
 
 			//
-			console.log('users', users.length);
-			console.log('androidUsers', androidUsers.length);
-			console.log('iosUsers', iosUsers.length);
-
+			// pushToIosChunks();
+			console.log(androidUsers);
+			PushNotificationService.pushToAndroidChunks(androidNotification, androidUsers);
 		});
 
 	},
@@ -54,12 +56,75 @@ PushNotificationService = {
 	//
 	createIosNotification: function(message){
 
+		// Set the notification.
+		var notification = new apn.Notification();
+		var beforeContent = '';
+
+		if (message.icon){
+			beforeContent = message.icon + ' ';
+		}
+
+		//
+		notification.expiry = Math.floor(Date.now() / 1000) + 3600;
+		notification.badge = 3;
+		notification.sound = message.sound;
+		notification.alert = beforeContent + message.content;
+
+		// TODO: No idea about this line.
+		notification.payload = {'messageFrom': 'Tamreen App'};
+
+		//
+		return notification;
 	},
 
 	//
 	createAndroidNotification: function(message){
 
+		var beforeContent = '';
+
+		if (message.icon){
+			beforeContent = message.icon + ' ';
+		}
+
+		// Set the android message.
+		var notification = new gcm.Message({
+			collapseKey: 'trainingActivity',
+			timeToLive: 3000,
+			data: {
+				message: 'تمرين ' + message.trainingName,
+				title: beforeContent + message.content,
+				notId: Math.floor(Math.random()*900000000) + 100000000,
+			}
+		});
+
+		//
+		return notification;
 	},
+
+	pushToAndroidChunks: function(notification, users){
+
+		//
+		var sender = new gcm.Sender(nconf.get('gcmSender'));
+		var chunks = users.chunk(200);
+
+		//
+		for (i=0; i<chunks.length; i++){
+
+			var registrationIds = chunks[i];
+
+			// Send the message.
+			sender.send(notification, registrationIds, 4, function(error, result){
+
+				if(error){
+					console.error(error);
+				}
+				else{
+					console.log(result);
+				}
+
+			});
+		}
+	}
 
 	// //
 	// toAndroid: function(message, registrationIds){
@@ -87,15 +152,6 @@ PushNotificationService = {
 	// 		var apnConnection = new apn.Connection(apnOptions);
 	// 		var token = registrationIds[0];
 	// 		var device = new apn.Device(token);
-
-	// 		// Set the notification.
-	// 		var notification = new apn.Notification();
-
-	// 		notification.expiry = Math.floor(Date.now() / 1000) + 3600;
-	// 		notification.badge = 3;
-	// 		notification.sound = 'ping.aiff';
-	// 		notification.alert = message;
-	// 		notification.payload = {'messageFrom': 'Tamreen App'};
 
 	// 		// Send the message.
 	// 		apnConnection.pushNotification(notification, device);

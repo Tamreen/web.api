@@ -45,23 +45,23 @@ require('../server');
 // 	console.log(training);
 // });
 
+var message = null;
+
 //
-TrainingActivityService.findById(47)
+TrainingActivityService.findById(892)
 
 //
 .then(function(trainingActivity){
-	
-	TrainingActivityService.listActivityRecipientsById(trainingActivity.id)
+
+	message = trainingActivity;
+
+	TrainingActivityService.listActivitySuggestedRecipientsById(trainingActivity.id)
 
 	//
 	.then(function(recipients){
 
-		console.log('recipients', recipients);
-
-		var message = {};
-
 		PushNotificationService.pushMessageToUsers(message, recipients);
-
+		
 	});
 
 });

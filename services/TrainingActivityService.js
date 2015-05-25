@@ -13,10 +13,8 @@ TrainingActivityService = {
 				return null;
 			}
 
+			//
 			var trainingActivity = trainingActivities[0];
-
-			// Add the description of the activity.
-			// trainingActivity.description = TrainingActivityService.describe({type: trainingActivity.type, authorFullname: trainingActivity.authorFullname});
 
 			// Elaborate the activity even more.
 			trainingActivity = TrainingActivityService.elaborate(trainingActivity);
@@ -46,7 +44,7 @@ TrainingActivityService = {
 
 			//
 			return TrainingActivityService.findById(id);
-		})
+		});
 	},
 
 	//
@@ -68,7 +66,7 @@ TrainingActivityService = {
 			//
 			ta = trainingActivity;
 
-			return TrainingActivityService.listActivityRecipientsById(ta.id);
+			return TrainingActivityService.listActivitySuggestedRecipientsById(ta.id);
 		})
 
 		// Create/Find the recipients to/in activityPlayers table.
@@ -87,58 +85,66 @@ TrainingActivityService = {
 		//
 		.then(function(){
 
-			// TODO: Push the notification, it should display an icon for android devices.
-			// TODO: There could be another way of notifying the user (e.g. SMS or email).
+			// Push the notification, it should display an icon for android devices.
+			PushNotificationService.pushMessageToUsers(ta, ar);
 
-			console.log('I am trying to push notifications to the recipients.');
+			// TODO: There could be another way of notifying the user (e.g. SMS or email).
 
 			return ar;
 		});
 	},
 
 	//
-	listActivityRecipientsById: function(id){
+	listActivitySuggestedRecipientsById: function(id){
 
-		var querylistUsersForTrainingId = DatabaseService.format('select users.*, players.fullname as fullname from activityPlayers, users, players where activityPlayers.playerId = users.playerId and players.id = users.playerId and activityPlayers.activityId = ?', [id]);
+		var querylistUsersForTrainingId = DatabaseService.format('select users.*, players.fullname as fullname from trainingActivities, trainingPlayers, players, users where trainingActivities.trainingId = trainingPlayers.trainingId and trainingPlayers.playerId = players.id and users.playerId = players.id and trainingActivities.id = ?', [id]);
 
 		//
 		return DatabaseService.query(querylistUsersForTrainingId);
 	},
 
-	//
+	// TODO: Implement the sound later.
 	elaborate: function(trainingActivity){
 
 		//
 		trainingActivity.content = null;
+		trainingActivity.sound = null;
 		trainingActivity.icon = null;
 
 		switch (trainingActivity.type){
 
 			case 'training-started':
+				trainingActivity.icon = '😀';
 				trainingActivity.content = 'بدأ التحضير للتمرين';
 			break;
 
 			case 'player-decided-to-come':
+				trainingActivity.icon = '😍';
 				trainingActivity.content = trainingActivity.authorFullname + ' قرّر أن يحضر';
 			break;
 
 			case 'player-registered-as-subset':
+				trainingActivity.icon = '😁';
 				trainingActivity.content = trainingActivity.authorFullname + ' سجّل كاحتياط';
 			break;
 
 			case 'player-apologized':
+			trainingActivity.icon = '😐';
 				trainingActivity.content = trainingActivity.authorFullname + ' اعتذر عن الحضور';
 			break;
 
 			case 'training-completed':
+				trainingActivity.icon = '😎';
 				trainingActivity.content = 'اكتمل التحضير للتمرين';
 			break;
 
 			case 'training-canceled':
+				trainingActivity.icon = '😡';
 				trainingActivity.content = 'أُلغي التمرين';
 			break;
 
 			case 'training-not-completed':
+				trainingActivity.icon = '😰';
 				trainingActivity.content = 'تحضير التمرين غير مُكتمل';
 			break;
 		}

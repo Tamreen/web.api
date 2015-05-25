@@ -44,6 +44,7 @@ TrainingService = {
 	create: function(parameters){
 
 		//
+		var id = null;
 		var authorId = parameters.authorId;
 
 		//
@@ -62,18 +63,22 @@ TrainingService = {
 		//
 		.then(function(insertTrainingResult){
 
-			var id = insertTrainingResult.insertId;
+			//
+			id = insertTrainingResult.insertId;
 
 			//
-			TrainingService.addGroupIdPlayersForPlayerIdToId(parameters.groupId, authorId, id)
+			return TrainingService.addGroupIdPlayersForPlayerIdToId(parameters.groupId, authorId, id)
+		})
+
+		//
+		.then(function(){
 
 			//
-			.then(function(){
-				return TrainingActivityService.create({trainingId: id, authorId: authorId, type: 'training-started'});
-			});
+			TrainingActivityService.create({trainingId: id, authorId: authorId, type: 'training-started'});
 
 			// Find the training by id.
 			return TrainingService.findForPlayerIdById(authorId, id);
+
 		});
 	},
 

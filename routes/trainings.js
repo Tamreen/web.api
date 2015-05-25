@@ -39,6 +39,9 @@ router.get('/groups/:groupId/trainings/latest', authenticatable, function(reques
 // POST /groups/:groupId/trainings/add
 router.post('/groups/:groupId/trainings/add', authenticatable, function(request, response){
 
+	//
+	var u = null;
+
 	if (!validator.isNumeric(request.params.groupId) || validator.isNull(request.body.stadium) || !validator.isDate(request.body.startedAt) || !validator.isNumeric(request.body.playersCount) || request.body.playersCount <= 0 || !validator.isNumeric(request.body.subsetPlayersCount) || request.body.subsetPlayersCount <= 0){
 		response.status(400).send({
 			'message': 'Bad request.',
@@ -58,19 +61,23 @@ router.post('/groups/:groupId/trainings/add', authenticatable, function(request,
 
 	//
 	.then(function(user){
-		return GroupService.checkIsPlayerIdAdminForIdOrDie(user.playerId, groupId);
+		u = user;
+		return GroupService.checkIsPlayerIdAdminForIdOrDie(u.playerId, groupId);
 	})
 
 	//
 	.then(function(groupPlayer){
 
-		return TrainingService.create({groupId: groupPlayer.groupId, status: 'gathering', stadium: stadium, startedAt: startedAt, playersCount: playersCount, subsetPlayersCount: subsetPlayersCount, authorId: user.playerId});
+		return TrainingService.create({groupId: groupPlayer.groupId, status: 'gathering', stadium: stadium, startedAt: startedAt, playersCount: playersCount, subsetPlayersCount: subsetPlayersCount, authorId: u.playerId});
 
 	})
 
 	// Response about it.
-	.then(function(createTrainingResult){
-		return response.send({'id': createTrainingResult.insertId});
+	.then(function(training){
+
+		console.log(training);
+
+		return response.send(training);
 	})
 
 	// Catch the error if any.

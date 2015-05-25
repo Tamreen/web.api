@@ -48,3 +48,15 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 // Parse application/json.
 app.use(bodyParser.json());
+
+// http://stackoverflow.com/questions/8495687/split-array-into-chunks
+Array.prototype.chunk = function(chunkSize){
+
+    var chunksArray = [];
+
+    for (var i=0; i<this.length; i+=chunkSize){
+        chunksArray.push(this.slice(i, i+chunkSize));
+    }
+
+    return chunksArray;
+}
