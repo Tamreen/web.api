@@ -20,20 +20,25 @@ PushNotificationService = {
 	pushMessageToUsers: function(message, users){
 
 		// TODO: If the environment is development, the behavior should be different.
+		if (nconf.get('environment') == 'development'){
+			console.log(message);
+			console.log(users);
+			return;
+		}
 
 		//
-		var androidUsers = [];
-		var iosUsers = [];
+		var androidUserTokens = [];
+		var iosUserTokens = [];
 
 		//
 		return Promise.each(users, function(user){
 			
 			if (user.deviceType == 'android'){
-				return androidUsers.push(user.deviceToken);
+				return androidUserTokens.push(user.deviceToken);
 			}
 
 			if (user.deviceType == 'ios'){
-				return iosUsers.push(user.deviceToken);
+				return iosUserTokens.push(user.deviceToken);
 			}
 
 		})
@@ -46,9 +51,8 @@ PushNotificationService = {
 			var androidNotification = PushNotificationService.createAndroidNotification(message);
 
 			//
-			// pushToIosChunks();
-			console.log(androidUsers);
-			PushNotificationService.pushToAndroidChunks(androidNotification, androidUsers);
+			PushNotificationService.pushToIosChunks(iosNotification, iosUserTokens);
+			PushNotificationService.pushToAndroidChunks(androidNotification, androidUserTokens);
 		});
 
 	},
@@ -101,11 +105,12 @@ PushNotificationService = {
 		return notification;
 	},
 
-	pushToAndroidChunks: function(notification, users){
+	//
+	pushToAndroidChunks: function(notification, userTokens){
 
 		//
 		var sender = new gcm.Sender(nconf.get('gcmSender'));
-		var chunks = users.chunk(200);
+		var chunks = userTokens.chunk(200);
 
 		//
 		for (i=0; i<chunks.length; i++){
@@ -126,23 +131,25 @@ PushNotificationService = {
 		}
 	},
 
-	// //
-	// toIos: function(message, registrationIds){
+	//
+	pushToIosChunks: function(notification, userTokens){
 
-	// 	console.log('toIos has been called.');
+		userTokens.forEach(function(userToken){
 
-	// 	try{
+			try{
 
-	// 		var apnConnection = new apn.Connection(apnOptions);
-	// 		var token = registrationIds[0];
-	// 		var device = new apn.Device(token);
+				// Create the connection.
+				var apnConnection = new apn.Connection(apnOptions);
+				var device = new apn.Device(userToken);
 
-	// 		// Send the message.
-	// 		apnConnection.pushNotification(notification, device);
+				// Send the message.
+				apnConnection.pushNotification(notification, device);
 
-	// 	}catch (exception){
-	// 		console.log(exception);
-	// 	}
-	// },
+			}catch (exception){
+				console.log(exception);
+			}
+
+		});
+	},
 
 };

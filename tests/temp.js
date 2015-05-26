@@ -33,10 +33,10 @@ require('../server');
 // 	console.log(groupPlayer);
 // });
 
-GroupService.listForPlayerId(1)
-.then(function(groups){
-	console.log(groups);
-});
+// GroupService.listForPlayerId(1)
+// .then(function(groups){
+// 	console.log(groups);
+// });
 
 // TrainingService.create({groupId: 6, name: 'Name of Something', status: 'gathering', stadium: 'stadium', startedAt: new Date(), playersCount: 10, subsetPlayersCount: 4, authorId: 1})
 
@@ -44,26 +44,24 @@ GroupService.listForPlayerId(1)
 // 	console.log(training);
 // });
 
-// var message = null;
+var message = null;
 
-// //
-// TrainingActivityService.findById(892)
+//
+TrainingActivityService.findById(892)
 
-// //
-// .then(function(trainingActivity){
+//
+.then(function(trainingActivity){
 
-// 	message = trainingActivity;
+	message = trainingActivity;
 
-// 	TrainingActivityService.listActivitySuggestedRecipientsById(trainingActivity.id)
+	TrainingActivityService.listActivitySuggestedRecipientsById(trainingActivity.id)
 
-// 	//
-// 	.then(function(recipients){
+	//
+	.then(function(recipients){
+		PushNotificationService.pushMessageToUsers(message, recipients);
+	});
 
-// 		PushNotificationService.pushMessageToUsers(message, recipients);
-		
-// 	});
-
-// });
+});
 
 
 
