@@ -2,6 +2,7 @@
 //
 FeedbackService = {
 
+	//
 	send: function(content, authorId){
 
 		var insertFeedbackParameters = {authorId: authorId, content: content, createdAt: new Date()};

@@ -18,12 +18,14 @@ pool = mysql.createPool({
 //
 DatabaseService = {
 
+	//
 	getConnection: function(){
 		return pool.getConnectionAsync().disposer(function(connection){
 			return connection.destroy();
 		});
 	},
 
+	//
 	query: function(command){
 		return using(DatabaseService.getConnection(), function(connection){
 			return connection.queryAsync(command).then(function(results){
@@ -33,7 +35,8 @@ DatabaseService = {
 		});
 	},
 
+	//
 	format: function(query, parameters){
 		return mysql.format(query, parameters);
-	}
+	},
 };

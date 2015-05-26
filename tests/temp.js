@@ -33,11 +33,10 @@ require('../server');
 // 	console.log(groupPlayer);
 // });
 
-// GroupService.listForPlayerId(1)
-
-// .then(function(groups){
-// 	console.log(groups);
-// });
+GroupService.listForPlayerId(1)
+.then(function(groups){
+	console.log(groups);
+});
 
 // TrainingService.create({groupId: 6, name: 'Name of Something', status: 'gathering', stadium: 'stadium', startedAt: new Date(), playersCount: 10, subsetPlayersCount: 4, authorId: 1})
 
@@ -73,10 +72,10 @@ require('../server');
 // 	console.log(done);
 // });
 
-TrainingService.findForPlayerIdById(1, 117)
-.then(function(training){
-	console.log(training);
-});
+// TrainingService.findForPlayerIdById(1, 117)
+// .then(function(training){
+// 	console.log(training);
+// });
 
 // TrainingService.listPlayersById(1)
 // .then(function(players){
