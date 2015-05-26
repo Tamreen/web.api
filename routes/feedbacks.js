@@ -14,7 +14,7 @@ router.post('/feedbacks/add', function(request, response){
 	// Validate the content of the feedback.
 	if (validator.isNull(request.body.content)){
 		response.status(400).send({
-			'message': 'Content of the feedback cannot be empty.'
+			'message': 'الرجاء التأكّد من تعبئة الحقل المطلوب.'
 		});
 		return;
 	}
@@ -40,9 +40,7 @@ router.post('/feedbacks/add', function(request, response){
 
 	// Response about it.
 	.then(function(){
-		return response.status(201).send({
-			'message': 'The feedback has been sent.'
-		});
+		return response.status(204).send();
 	})
 
 	// Catch the error if any.

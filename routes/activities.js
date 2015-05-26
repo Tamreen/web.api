@@ -4,7 +4,7 @@ router.get('/trainings/:id/activities', authenticatable, function(request, respo
 
 	if (!validator.isNumeric(request.params.id)){
 		response.status(400).send({
-			'message': 'Bad request.',
+			'message': 'الرجاء التأكّد من اختيار تمرين صحيح.',
 		});
 		return;
 	}

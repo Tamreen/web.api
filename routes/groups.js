@@ -29,10 +29,9 @@ router.get('/groups/latest', authenticatable, function(request, response){
 router.get('/groups/:id', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
-		response.status(400).send({
-			'message': 'Cannot understand the value of group id.',
+		return response.status(400).send({
+			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
 		});
-		return;
 	}
 
 	var id = request.params.id;
@@ -59,10 +58,9 @@ router.get('/groups/:id', authenticatable, function(request, response){
 router.post('/groups/add', authenticatable, function(request, response){
 
 	if (validator.isNull(request.body.name)){
-		response.status(400).send({
-			'message': 'Bad request.'
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من تعبئة اسم المجموعة.'
 		});
-		return;
 	}
 
 	var name = request.body.name;
@@ -90,10 +88,9 @@ router.post('/groups/add', authenticatable, function(request, response){
 router.get('/groups/:id/leave', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
-		response.status(400).send({
-			'message': 'Cannot understand the value of group id.',
+		return response.status(400).send({
+			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
 		});
-		return;
 	}
 
 	var id = request.params.id;
@@ -121,10 +118,9 @@ router.get('/groups/:id/leave', authenticatable, function(request, response){
 router.get('/groups/:id/delete', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
-		response.status(400).send({
-			'message': 'Cannot understand the value of group id.',
+		return response.status(400).send({
+			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
 		});
-		return;
 	}
 
 	// Set the id of the group.
@@ -153,10 +149,9 @@ router.get('/groups/:id/delete', authenticatable, function(request, response){
 router.get('/groups/:groupId/players', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.groupId)){
-		response.status(400).send({
-			'message': 'Cannot understand the value of group id.',
+		return response.status(400).send({
+			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
 		});
-		return;
 	}
 
 	var groupId = request.params.groupId;
@@ -189,10 +184,9 @@ router.get('/groups/:groupId/players/latest', authenticatable, function(request,
 router.post('/groups/:groupId/players/add', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.groupId) || validator.isNull(request.body.fullname) || !e164Format.test(request.body.e164formattedMobileNumber)){
-		response.status(400).send({
-			'message': 'Invalid inputs.',
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من تةفّر المعلومات الكاملة الخاصّة باللاعب.',
 		});
-		return;
 	}
 
 	// Define variables to be used.
@@ -228,10 +222,9 @@ router.post('/groups/:groupId/players/add', authenticatable, function(request, r
 router.get('/groups/:groupId/players/:id/delete', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.groupId) || !validator.isNumeric(request.params.id)){
-		response.status(400).send({
-			'message': 'Invalid inputs.',
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من اختيار اللاعب الصحيح في المجموعة الصحيحة.',
 		});
-		return;
 	}
 
 	// Define variables to be used.
@@ -261,10 +254,9 @@ router.get('/groups/:groupId/players/:id/delete', authenticatable, function(requ
 router.get('/groups/:groupId/players/:id/adminize', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.groupId) || !validator.isNumeric(request.params.id)){
-		response.status(400).send({
-			'message': 'Invalid inputs.',
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من اختيار اللاعب الصحيح في المجموعة الصحيحة.',
 		});
-		return;
 	}
 
 	// Define variables to be used.

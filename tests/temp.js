@@ -63,8 +63,6 @@ TrainingActivityService.findById(892)
 
 });
 
-
-
 // TrainingActivityService.notifyAboutId(1)
 // .then(function(done){
 // 	console.log(done);

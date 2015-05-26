@@ -210,7 +210,6 @@ GroupService = {
 		})
 
 		.then(function(groupPlayer){
-
 			return GroupPlayerService.findPlayerGroupById(groupPlayer.id);
 
 		});

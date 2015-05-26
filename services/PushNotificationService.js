@@ -19,7 +19,7 @@ PushNotificationService = {
 	//
 	pushMessageToUsers: function(message, users){
 
-		// TODO: If the environment is development, the behavior should be different.
+		// If the environment is development, the behavior should be different.
 		if (nconf.get('environment') == 'development'){
 			console.log(message);
 			console.log(users);

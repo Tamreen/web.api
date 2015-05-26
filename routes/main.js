@@ -34,7 +34,7 @@ handleApiErrors = function(error, response){
 
 	// Response to the user with something went wrong.
 	return response.status(500).send({
-		'message': 'Something went wrong.',
+		'message': 'هُناك خطأ ما، الرجاء المحاولة لاحقًا.',
 	});
 }
 
@@ -43,7 +43,7 @@ authenticatable = function(request, response, next){
 
 	if (validator.isNull(request.get('X-User-Token'))){
 		return response.status(401).send({
-			'message': 'Not authorized to access this resource.',
+			'message': 'لا يُمكنك الوصول إلى هذه الواجهة، حاول تسجيل الدخول تكرّمًا.',
 		});
 	}
 
@@ -68,7 +68,6 @@ authenticatable = function(request, response, next){
 				return DatabaseService.query(queryUpdateUser);
 			}
 		}
-
 	})
 
 	// Response about it.
@@ -84,7 +83,7 @@ authenticatable = function(request, response, next){
 
 		// Not authorized.
 		return response.status(401).send({
-			'message': 'Not authorized to access this resource.',
+			'message': 'لا يُمكنك الوصول إلى هذه الواجهة، حاول تسجيل الدخول تكرّمًا.',
 		});
 
 	});

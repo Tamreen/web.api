@@ -5,7 +5,7 @@ router.post('/users/firsthandshake', function(request, response){
 	// Validate the mobile number.
 	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.get('X-User-Device-Type')) || validator.isNull(request.get('X-User-Device-Token'))){
 		return response.status(400).send({
-			'message': 'The mobile number and/or device type and/or device token are not valid.',
+			'message': 'الرجاء التأكّد من إدخال رقم جوّال صحيح.',
 		});
 	}
 
@@ -35,7 +35,7 @@ router.post('/users/secondhandshake', function(request, response){
 	// Validate the mobile number and the code.
 	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.session.code) || !validator.equals(request.body.code, request.session.code)){
 		return response.status(400).send({
-			'message': 'The mobile number and/or the code are not valid.',
+			'message': 'الرجاء التأكّد من إدخال رقم الجوّال و كلمة المرور بشكل صحيح.',
 		});
 	}
 
@@ -64,9 +64,7 @@ router.post('/users/secondhandshake', function(request, response){
 
 	// Response about it.
 	.then(function(user){
-
 		return response.send(user);
-
 	})
 
 	// Catch the error if any.
@@ -107,10 +105,9 @@ router.get('/users/logout', authenticatable, function(request, response){
 router.post('/users/update', authenticatable, function(request, response){
 
 	if (validator.isNull(request.body.fullname)){
-		response.status(400).send({
-			'message': 'Bad request.',
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من إدخال الاسم الكامل بشكلٍ صحيحٍ.',
 		});
-		return;
 	}
 
 	// Set the fullname value.

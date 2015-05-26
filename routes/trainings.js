@@ -3,10 +3,9 @@
 router.get('/groups/:groupId/trainings', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.groupId)){
-		response.status(400).send({
-			'message': 'Cannot understand the value of group id.',
+		return response.status(400).send({
+			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
 		});
-		return;
 	}
 
 	//
@@ -42,11 +41,11 @@ router.post('/groups/:groupId/trainings/add', authenticatable, function(request,
 	//
 	var u = null;
 
+	//
 	if (!validator.isNumeric(request.params.groupId) || validator.isNull(request.body.stadium) || !validator.isDate(request.body.startedAt) || !validator.isNumeric(request.body.playersCount) || request.body.playersCount <= 0 || !validator.isNumeric(request.body.subsetPlayersCount) || request.body.subsetPlayersCount <= 0){
-		response.status(400).send({
-			'message': 'Bad request.',
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من تعبئة الحقول المطلوبة.',
 		});
-		return;
 	}
 
 	//
@@ -67,16 +66,11 @@ router.post('/groups/:groupId/trainings/add', authenticatable, function(request,
 
 	//
 	.then(function(groupPlayer){
-
 		return TrainingService.create({groupId: groupPlayer.groupId, status: 'gathering', stadium: stadium, startedAt: startedAt, playersCount: playersCount, subsetPlayersCount: subsetPlayersCount, authorId: u.playerId});
-
 	})
 
 	// Response about it.
 	.then(function(training){
-
-		console.log(training);
-
 		return response.send(training);
 	})
 
@@ -90,12 +84,12 @@ router.post('/groups/:groupId/trainings/add', authenticatable, function(request,
 router.get('/trainings/:id', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
-		response.status(400).send({
+		return response.status(400).send({
 			'message': 'Bad request.',
 		});
-		return;
 	}
 
+	//
 	var id = request.params.id;
 
 	//
@@ -121,10 +115,9 @@ router.get('/trainings/:id', authenticatable, function(request, response){
 router.get('/trainings/:id/willcome', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
-		response.status(400).send({
-			'message': 'Bad request.',
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من اختيار تمرين صحيح.',
 		});
-		return;
 	}
 
 	//
@@ -154,10 +147,9 @@ router.get('/trainings/:id/apologize', authenticatable, function(request, respon
 
 	//
 	if (!validator.isNumeric(request.params.id)){
-		response.status(400).send({
-			'message': 'Bad request.',
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من اختيار تمرين صحيح.',
 		});
-		return;
 	}
 
 	//
@@ -186,10 +178,9 @@ router.get('/trainings/:id/apologize', authenticatable, function(request, respon
 router.get('/trainings/:id/cancel', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
-		response.status(400).send({
-			'message': 'Bad request.',
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من اختيار تمرين صحيح.',
 		});
-		return;
 	}
 
 	var id = request.params.id;
