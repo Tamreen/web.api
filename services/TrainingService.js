@@ -100,7 +100,7 @@ TrainingService = {
 		.then(function(training){
 
 			if (!training){
-				throw new BadRequestError('Training cannot be found.');
+				throw new BadRequestError('لا يُمكن العثور على التمرين.');
 			}
 
 			// Take a copy to be remembered.
@@ -157,7 +157,7 @@ TrainingService = {
 
 			// Check if the training is valid.
 			if (!training){
-				throw new BadRequestError('The training cannot be found.');
+				throw new BadRequestError('لا يُمكن العثور على التمرين.');
 			}
 
 			//
@@ -165,12 +165,12 @@ TrainingService = {
 
 			// Check if the player id is not admin.
 			if (training.adminable == 0){
-				throw new BadRequestError('The training cannot be canceled when the player is not admin.');
+				throw new BadRequestError('لا يُمكن إلغاء التمرين إلا بواسطة مدير المجموعة.');
 			}
 
 			// Check if the training is already canceled.
 			if (training.status == 'canceled'){
-				throw new BadRequestError('The training is already canceled.');
+				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
 			}
 
 			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-canceled'});
@@ -210,7 +210,7 @@ TrainingService = {
 
 			// Check if the training is valid.
 			if (!training){
-				throw new BadRequestError('The training cannot be found.');
+				throw new BadRequestError('لا يُمكن العثور على التمرين.');
 			}
 
 			//
@@ -218,19 +218,19 @@ TrainingService = {
 
 			// Check if the training is already canceled.
 			if (t.status == 'canceled'){
-				throw new BadRequestError('The training is already canceled.');
+				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
 			}
 
 			// TODO: Check if the attending time for the training has ended.
 
 			// Check if the player id has decided.
 			if (t.playerDecision == 'willcome' || (t.playerDecision == 'register-as-subset' && evenIfWasSubset == false)){
-				throw new BadRequestError('The player id already has decided.');
+				throw new BadRequestError('اللاعب قد قرّر مُسبقًا.');
 			}
 
 			// Check if the training is already completed.
 			if (t.playersCount == t.willcomePlayersCount && t.subsetPlayersCount == t.registerAsSubsetPlayersCount){
-				throw new BadRequestError('The training is already completed.');
+				throw new BadRequestError('التمرين قد اكتمل مُسبقًا.');
 			}
 
 			// Check if there is enough space for attending as a major player.
@@ -297,7 +297,7 @@ TrainingService = {
 
 			// Check if the training is valid.
 			if (!training){
-				throw new BadRequestError('The training cannot be found.');
+				throw new BadRequestError('لا يُمكن العثور على التمرين.');
 			}
 
 			//
@@ -305,14 +305,14 @@ TrainingService = {
 
 			// Check if the training is already canceled.
 			if (t.status == 'canceled'){
-				throw new BadRequestError('The training is already canceled.');
+				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
 			}
 
 			// TODO: Check if the attending time for the training has ended.
 
 			// Check if the player id has decided.
 			if (t.playerDecision == 'apologize'){
-				throw new BadRequestError('The player id already has decided.');
+				throw new BadRequestError('اللاعب قد قرّر مُسبقًا.');
 			}
 
 			// TODO: If it is too late then it is too late.

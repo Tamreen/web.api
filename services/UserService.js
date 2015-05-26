@@ -12,7 +12,7 @@ UserService = {
 
 			// Check if the token is invalid, then reject the promise with BadRequestError.
 			if (validator.isNull(token)){
-				return reject(new BadRequestError('The user token cannot be empty.'));
+				return reject(new BadRequestError('الرجاء إدخال معرّف المستخدم.'));
 			}
 
 			// Search for a user with the given token.
@@ -21,7 +21,7 @@ UserService = {
 			DatabaseService.query(queryfindCurrentOrDieUser).then(function(users){
 				
 				if (users.length == 0){
-					return reject(new NotFoundError('The user cannot be found.'));
+					return reject(new UnauthorizedError('لا يُمكنك الوصول إلى هذه الواجهة.'));
 				}
 
 				// Get the first user.

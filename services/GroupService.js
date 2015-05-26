@@ -85,14 +85,14 @@ GroupService = {
 			.then(function(groupPlayers){
 
 				if (groupPlayers.length == 0){
-					return reject(new BadRequestError('Cannot find the specified group.'));
+					return reject(new BadRequestError('لا يُمكن العثور على المجموعة المحدّدة.'));
 				}
 
 				// Set the group player.
 				var groupPlayer = groupPlayers[0];
 
 				if (groupPlayer.role == 'admin'){
-					return reject(new BadRequestError('Cannot leave a group when admin you are.'));
+					return reject(new BadRequestError('لا يُمكنك مغادرة المجموعة لكونك مديرًا.'));
 				}
 
 				var updateGroupPlayerParameters = {leftAt: new Date()};
@@ -134,14 +134,14 @@ GroupService = {
 			.then(function(groupPlayers){
 
 				if (groupPlayers.length == 0){
-					return reject(new BadRequestError('Cannot find the specified group.'));
+					return reject(new BadRequestError('لا يُمكن العثور على المجموعة المحدّدة.'));
 				}
 
 				// Set the group player.
 				var groupPlayer = groupPlayers[0];
 
 				if (groupPlayer.role != 'admin'){
-					return reject(new BadRequestError('Cannot delete a group when admin you are not.'));
+					return reject(new BadRequestError('لا يُمكنك حذف المجموعة لكونك لست مديرًا.'));
 				}
 
 				//
@@ -171,7 +171,7 @@ GroupService = {
 		.then(function(user){
 
 			if (!validator.isNull(user.deletedAt)){
-				throw new BadRequestError('Cannot add an inactive player to the group.');
+				throw new BadRequestError('لا يُمكن إضافة لاعب غير نشط إلى المجموعة.');
 			}
 
 			return GroupService.joinByIdForPlayerId(id, user.playerId);
@@ -189,7 +189,7 @@ GroupService = {
 
 			// Check if the player id never left the group id.
 			if (groupPlayer && validator.isNull(groupPlayer.leftAt)){
-				throw new BadRequestError('Player is already in that group.');
+				throw new BadRequestError('اللاعب في المجموعة مسبقًا.');
 			}
 
 			if (!groupPlayer){
@@ -229,7 +229,7 @@ GroupService = {
 			.then(function(groupPlayers){
 
 				if (groupPlayers.length == 0){
-					return reject(new BadRequestError('Not authorized to access this method.'));
+					return reject(new UnauthorizedError('لا يُمكنك الوصول إلى هذه الواجهة، ربما لكونك لست مديرًا.'));
 				}
 
 				var groupPlayer = groupPlayers[0];

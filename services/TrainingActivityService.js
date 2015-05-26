@@ -60,7 +60,7 @@ TrainingActivityService = {
 		.then(function(trainingActivity){
 
 			if (!trainingActivity){
-				throw new BadRequestError('Training activity cannot be found.');
+				throw new BadRequestError('لا يُمكن العثور على نشاط التمرين.');
 			}
 
 			//
@@ -162,7 +162,7 @@ TrainingActivityService = {
 		.then(function(training){
 
 			if (!training){
-				throw new BadRequestError('The training cannot be found.');
+				throw new BadRequestError('لا يُمكن العثور على التمرين.');
 			}
 
 			var queryGetTrainingActivities = DatabaseService.format('select trainingActivities.*, players.fullname as author from trainingActivities, players where trainingActivities.authorId = players.id and trainingActivities.trainingId = ? order by trainingActivities.createdAt asc', [training.id]);
