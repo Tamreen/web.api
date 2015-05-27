@@ -147,6 +147,11 @@ TrainingActivityService = {
 				trainingActivity.icon = '😰';
 				trainingActivity.content = 'تحضير التمرين غير مُكتمل';
 			break;
+
+			case 'player-brought-professional':
+				trainingActivity.icon = '😊';
+				trainingActivity.content = trainingActivity.authorFullname + ' جلب محترفًا';
+			break;
 		}
 
 		//

@@ -23,7 +23,7 @@ require('../server');
 // 	console.log(playerGroup);
 // });
 
-// TrainingService.listForGroupIdAndPlayerId(104, 1).then(function(trainings){ // 104 => 
+// TrainingService.listForGroupIdAndPlayerId(271, 1).then(function(trainings){ // 104 => 
 // 	console.log(trainings);
 // });
 
@@ -44,24 +44,24 @@ require('../server');
 // 	console.log(training);
 // });
 
-var message = null;
+// var message = null;
 
-//
-TrainingActivityService.findById(892)
+// //
+// TrainingActivityService.findById(892)
 
-//
-.then(function(trainingActivity){
+// //
+// .then(function(trainingActivity){
 
-	message = trainingActivity;
+// 	message = trainingActivity;
 
-	TrainingActivityService.listActivitySuggestedRecipientsById(trainingActivity.id)
+// 	TrainingActivityService.listActivitySuggestedRecipientsById(trainingActivity.id)
 
-	//
-	.then(function(recipients){
-		PushNotificationService.pushMessageToUsers(message, recipients);
-	});
+// 	//
+// 	.then(function(recipients){
+// 		PushNotificationService.pushMessageToUsers(message, recipients);
+// 	});
 
-});
+// });
 
 // TrainingActivityService.notifyAboutId(1)
 // .then(function(done){
@@ -93,14 +93,40 @@ TrainingActivityService.findById(892)
 // 	console.log(activities);
 // });
 
-// TrainingService.decideForPlayerIdToComeToId(1, 1, false)
+//[1, 8, 9, 10, 11, 12, 56, 639];
+
+// var playerIds = [12];
+
+// playerIds.forEach(function(playerId){
+// 	TrainingService.decideForPlayerIdToComeToId(playerId, 123, false, false)
+// 	.then(function(done){
+// 		console.log('The player id has decided to come to the id.');
+// 	});
+// });
+
+// TrainingService.decideForPlayerIdToComeToId(787, 119, false, false)
 // .then(function(done){
 // 	console.log('The player id has decided to come to the id.');
 // });
 
-// TrainingService.decideForPlayerIdToApologizeToId(1, 1)
+// TrainingService.decideForPlayerIdToApologizeToId(10, 123)
 // .then(function(done){
 // 	console.log('The player id has decided to apologize to the id.');
 // });
 
 // SmsService.send('+112121', 'This is a message and it should be sent.');
+
+// TrainingService.findById(121)
+// .then(function(training){
+// 	console.log(training);
+// });
+
+// 	TrainingService.decideForPlayerIdToComeToId(playerId, 121, false, false)
+// 	.then(function(done){
+// 		console.log('The player id has decided to come to the id.');
+// 	});
+
+TrainingService.bringProfessionalByPlayerIdForId({e164formattedMobileNumber: '+966553085526', fullname: 'فؤاد الهذلول'}, 1, 123)
+.then(function(){
+	console.log('Should be okay.');
+});

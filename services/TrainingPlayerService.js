@@ -18,6 +18,22 @@ TrainingPlayerService = {
 	},
 
 	//
+	findByTrainingIdAndPlayerId: function(trainingId, playerId){
+
+		var queryGetTrainingPlayer = DatabaseService.format('select * from trainingPlayers where trainingId = ? and playerId = ? limit 1', [trainingId, playerId]);
+		
+		return DatabaseService.query(queryGetTrainingPlayer).then(function(trainingPlayers){
+
+			if (trainingPlayers.length == 0){
+				return null;
+			}
+
+			var trainingPlayer = trainingPlayers[0];
+			return trainingPlayer;
+		});
+	},
+
+	//
 	findOrCreate: function(parameters){
 
 		var queryGetTrainingPlayer = DatabaseService.format('select * from trainingPlayers where trainingId = ? and playerId = ? limit 1', [parameters.trainingId, parameters.playerId]);

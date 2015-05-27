@@ -3,9 +3,25 @@
 TrainingService = {
 
 	//
+	findById: function(id){
+
+		var queryGetTraining = DatabaseService.format('select * from trainings where id = ? limit 1', [id]);
+		
+		return DatabaseService.query(queryGetTraining).then(function(trainings){
+
+			if (trainings.length == 0){
+				return null;
+			}
+
+			var training = trainings[0];
+			return training;
+		});
+	},
+
+	//
 	findForPlayerIdById: function(playerId, id){
 
-		var queryGetTraining = DatabaseService.format('select trainings.*, (select decision from trainingPlayers where trainingId = trainings.id and playerId = tp.playerId) as playerDecision, (select count(groupPlayers.id) > 0 from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = tp.playerId and groups.id = trainings.groupId and users.deletedAt is null and groups.deletedAt is null and groupPlayers.leftAt is null and groupPlayers.role = \'admin\') as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'register-as-subset\') subsetPlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'notyet\') as notyetPlayersCount from trainingPlayers tp, trainings where tp.trainingId = trainings.id and tp.playerId = ? and trainings.id = ?;', [playerId, id]);
+		var queryGetTraining = DatabaseService.format('select trainings.*, (select decision from trainingPlayers where trainingId = trainings.id and playerId = tp.playerId) as playerDecision, (select count(groupPlayers.id) > 0 from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = tp.playerId and groups.id = trainings.groupId and users.deletedAt is null and groups.deletedAt is null and groupPlayers.leftAt is null and groupPlayers.role = \'admin\') as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'register-as-subset\') registerAsSubsetPlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'notyet\') as notyetPlayersCount from trainingPlayers tp, trainings where tp.trainingId = trainings.id and tp.playerId = ? and trainings.id = ?;', [playerId, id]);
 		
 		return DatabaseService.query(queryGetTraining).then(function(trainings){
 
@@ -196,7 +212,7 @@ TrainingService = {
 	},
 
 	//
-	decideForPlayerIdToComeToId: function(playerId, id, evenIfWasSubset){
+	decideForPlayerIdToComeToId: function(playerId, id, isSubset, isprofessional){
 
 		//
 		var t = null;
@@ -224,12 +240,12 @@ TrainingService = {
 			// TODO: Check if the attending time for the training has ended.
 
 			// Check if the player id has decided.
-			if (t.playerDecision == 'willcome' || (t.playerDecision == 'register-as-subset' && evenIfWasSubset == false)){
+			if (t.playerDecision == 'willcome' || (t.playerDecision == 'register-as-subset' && isSubset == false)){
 				throw new BadRequestError('اللاعب قد قرّر مُسبقًا.');
 			}
 
 			// Check if the training is already completed.
-			if (t.playersCount == t.willcomePlayersCount && t.subsetPlayersCount == t.registerAsSubsetPlayersCount){
+			if (t.playersCount == t.willcomePlayersCount && (t.subsetPlayersCount == t.registerAsSubsetPlayersCount || isprofessional == true)){
 				throw new BadRequestError('التمرين قد اكتمل مُسبقًا.');
 			}
 
@@ -240,8 +256,9 @@ TrainingService = {
 
 			// Check if there is no enough space for that.
 			if (t.subsetPlayersCount > t.registerAsSubsetPlayersCount){
-				return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'register-as-subset'});
+				return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'player-registered-as-subset'});
 			}
+
 		})
 
 		// Update the training player decision.
@@ -250,11 +267,11 @@ TrainingService = {
 			//
 			ta = activity;
 
-			if (activity.type == 'player-decided-to-come'){
+			if (ta.type == 'player-decided-to-come'){
 				return TrainingPlayerService.updateDecisionByTrainingIdAndPlayerId('willcome', t.id, playerId);
 			}
 
-			if (activity.type == 'register-as-subset'){
+			if (ta.type == 'player-registered-as-subset'){
 				return TrainingPlayerService.updateDecisionByTrainingIdAndPlayerId('register-as-subset', t.id, playerId);
 			}
 		})
@@ -367,9 +384,8 @@ TrainingService = {
 		//
 		.then(function(subsetPlayers){
 
-			//
+			// No subset players have been found.
 			if (subsetPlayers.length == 0){
-				console.log('No subset players have been found.');
 				return true;
 			}
 
@@ -377,7 +393,60 @@ TrainingService = {
 			var subsetPlayer = subsetPlayers[0];
 
 			//
-			return TrainingService.decideForPlayerIdToComeToId(subsetPlayer.playerId, id, true);
+			return TrainingService.decideForPlayerIdToComeToId(subsetPlayer.playerId, id, true, false);
 		});
-	}
+	},
+
+	//
+	bringProfessionalByPlayerIdForId: function(professionalParameters, playerId, id){
+
+		var professional = null;
+
+		//
+		return TrainingService.findById(id)
+
+		// Find or create the professional.
+		.then(function(training){
+
+			// Check if the training is valid.
+			if (!training){
+				throw new BadRequestError('لا يُمكن العثور على التمرين.');
+			}
+
+			// Check if the training is already canceled.
+			if (training.status == 'canceled'){
+				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
+			}
+
+			//
+			return UserService.findByE164formattedMobileNumberOrCreate(professionalParameters.e164formattedMobileNumber, {fullname: professionalParameters.fullname}, true);
+		})
+
+		//
+		.then(function(user){
+			professional = user;
+			return TrainingPlayerService.findByTrainingIdAndPlayerId(id, professional.playerId);
+		})
+
+		// Check if the user is already in the training.
+		.then(function(trainingPlayer){
+
+			if (trainingPlayer){
+				throw new BadRequestError('The player is already invited to the training.');
+			}
+
+			// Add the professional.
+			return TrainingPlayerService.create({trainingId: id, playerId: professional.playerId, decision: 'notyet'});
+		})
+
+		// Add a new activity of bringing a professional.
+		.then(function(trainingPlayer){
+			return TrainingActivityService.create({trainingId: id, authorId: playerId, type: 'player-brought-professional'});
+		})
+
+		// Decide for the professional to come.
+		.then(function(trainingActivity){
+			return TrainingService.decideForPlayerIdToComeToId(professional.playerId, id, false, true);
+		});
+	},
 };

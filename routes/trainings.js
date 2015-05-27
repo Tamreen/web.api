@@ -128,7 +128,7 @@ router.get('/trainings/:id/willcome', authenticatable, function(request, respons
 
 	//
 	.then(function(user){
-		return TrainingService.decideForPlayerIdToComeToId(user.playerId, id, false);
+		return TrainingService.decideForPlayerIdToComeToId(user.playerId, id, false, false);
 	})
 
 	// Response about it.
