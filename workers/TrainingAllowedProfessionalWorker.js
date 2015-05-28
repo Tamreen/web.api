@@ -2,7 +2,7 @@
 //
 TrainingAllowedProfessionalWorker = function(){
 	
-	// TODO: List trainings that should allow professional players.
+	// List trainings that should allow professional players.
 
 	var queryListNotProfessionalableTrainings = DatabaseService.format('select id, (select authorId from trainingActivities where trainingId = trainings.id and type = \'training-started\') as authorId from trainings where status = \'gathering\' and startedAt > now() and now() > createdAt + interval ? minute and (select count(id) > 0 from trainingActivities where trainingId = trainings.id and type = \'training-allowed-professional\') = false', nconf.get('trainingMinutesForProfessional'));
 

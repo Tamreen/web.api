@@ -18,7 +18,6 @@ GroupService = {
 		});
 	},
 
-	// TODO: This should be ordered by latest activities.
 	//
 	listForPlayerId: function(playerId){
 

@@ -206,9 +206,8 @@ TrainingService = {
 
 		var queryUpdateTrainingById = DatabaseService.format('update trainings set ? where id = ?', [parameters, id]);
 		
-		return DatabaseService.query(queryUpdateTrainingById);
-
 		// TODO: This could be fixed in a better way.
+		return DatabaseService.query(queryUpdateTrainingById);
 	},
 
 	//
@@ -237,7 +236,10 @@ TrainingService = {
 				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
 			}
 
-			// TODO: Check if the attending time for the training has ended.
+			// Check if the attending time for the training has ended.
+			if (new Date() > t.startedAt){
+				throw new BadRequestError('التمرين قد انتهى مُسبقًا.');
+			}
 
 			// Check if the player id has decided.
 			if (t.playerDecision == 'willcome' || (t.playerDecision == 'register-as-subset' && isSubset == false)){
@@ -325,7 +327,10 @@ TrainingService = {
 				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
 			}
 
-			// TODO: Check if the attending time for the training has ended.
+			// Check if the attending time for the training has ended.
+			if (new Date() > t.startedAt){
+				throw new BadRequestError('التمرين قد انتهى مُسبقًا.');
+			}
 
 			// Check if the player id has decided.
 			if (t.playerDecision == 'apologize'){
