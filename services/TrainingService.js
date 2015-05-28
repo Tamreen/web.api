@@ -432,7 +432,7 @@ TrainingService = {
 		.then(function(trainingPlayer){
 
 			if (trainingPlayer){
-				throw new BadRequestError('The player is already invited to the training.');
+				throw new BadRequestError('قد دُعي اللاعب للتمرين مُسبقًا.');
 			}
 
 			// Add the professional.
