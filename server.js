@@ -8,6 +8,9 @@ require('./services');
 // Require the needed routes.
 require('./routes');
 
+// Require the needed workers.
+require('./workers');
+
 // Attach all previous routes under /api/v1.
 app.use('/api/v1', router);
 

@@ -152,6 +152,11 @@ TrainingActivityService = {
 				trainingActivity.icon = '😊';
 				trainingActivity.content = trainingActivity.authorFullname + ' جلب محترفًا';
 			break;
+
+			case 'training-allowed-professional':
+				trainingActivity.icon = '😏';
+				trainingActivity.content = 'فُتح الباب لجلب المحترفين';
+			break;
 		}
 
 		//
