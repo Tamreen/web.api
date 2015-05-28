@@ -185,7 +185,7 @@ router.post('/groups/:groupId/players/add', authenticatable, function(request, r
 
 	if (!validator.isNumeric(request.params.groupId) || validator.isNull(request.body.fullname) || !e164Format.test(request.body.e164formattedMobileNumber)){
 		return response.status(400).send({
-			'message': 'الرجاء التأكّد من تةفّر المعلومات الكاملة الخاصّة باللاعب.',
+			'message': 'الرجاء التأكّد من توفّر المعلومات الكاملة الخاصّة باللاعب.',
 		});
 	}
 

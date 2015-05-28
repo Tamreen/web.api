@@ -174,6 +174,39 @@ router.get('/trainings/:id/apologize', authenticatable, function(request, respon
 	});
 });
 
+// POST /trainings/:id/professionals/bring
+router.post('/trainings/:id/professionals/bring', authenticatable, function(request, response){
+
+	if (!validator.isNumeric(request.params.id) || validator.isNull(request.body.fullname) || !e164Format.test(request.body.e164formattedMobileNumber)){
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من توفّر المعلومات الكاملة الخاصّة باللاعب.',
+		});
+	}
+
+	// Define variables to be used.
+	var id = request.params.id;
+	var fullname = request.body.fullname;
+	var e164formattedMobileNumber = request.body.e164formattedMobileNumber;
+
+	//
+	UserService.findCurrentOrDie(request)
+
+	//
+	.then(function(user){
+		return TrainingService.bringProfessionalByPlayerIdForId({e164formattedMobileNumber: e164formattedMobileNumber, fullname: fullname}, user.playerId, id);
+	})
+
+	// Response about it.
+	.then(function(){
+		return response.status(204).send();
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+});
+
 // GET /trainings/:id/cancel
 router.get('/trainings/:id/cancel', authenticatable, function(request, response){
 
