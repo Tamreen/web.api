@@ -68,7 +68,7 @@ require('../server');
 // 	console.log(done);
 // });
 
-// TrainingService.findForPlayerIdById(1, 117)
+// TrainingService.findForPlayerIdById(1, 124)
 // .then(function(training){
 // 	console.log(training);
 // });
@@ -126,7 +126,7 @@ require('../server');
 // 		console.log('The player id has decided to come to the id.');
 // 	});
 
-TrainingService.bringProfessionalByPlayerIdForId({e164formattedMobileNumber: '+966553085526', fullname: 'فؤاد الهذلول'}, 1, 123)
-.then(function(){
-	console.log('Should be okay.');
-});
+// TrainingService.bringProfessionalByPlayerIdForId({e164formattedMobileNumber: '+966553085526', fullname: 'فؤاد الهذلول'}, 1, 123)
+// .then(function(){
+// 	console.log('Should be okay.');
+// });
