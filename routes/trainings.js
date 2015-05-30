@@ -320,8 +320,6 @@ router.get('/trainings/:id/players/:playerId/apologize', authenticatable, functi
 			throw new BadRequestError('لا يُمكن اتخذا هذا القرار لكونك لست مديرًا.');
 		}
 
-		console.log(training);
-
 		//
 		return TrainingService.decideForPlayerIdToApologizeToId(playerId, id);
 	})
