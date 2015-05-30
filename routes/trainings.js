@@ -236,3 +236,103 @@ router.get('/trainings/:id/cancel', authenticatable, function(request, response)
 		return handleApiErrors(error, response);
 	});
 });
+
+// GET /trainings/:id/players/:playerId/willcome
+router.get('/trainings/:id/players/:playerId/willcome', authenticatable, function(request, response){
+
+	if (!validator.isNumeric(request.params.id) || !validator.isNumeric(request.params.playerId)){
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من اختيار تمرينٍ و لاعبٍ صحيحين.',
+		});
+	}
+
+	//
+	var id = request.params.id;
+	var playerId = request.params.playerId;
+
+	//
+	UserService.findCurrentOrDie(request)
+
+	//
+	.then(function(user){
+		return TrainingService.findForPlayerIdById(user.playerId, id);
+	})
+
+	//
+	.then(function(training){
+
+		//
+		if (!training){
+			throw new BadRequestError('لا يُمكن العثور على التمرين.');
+		}
+
+		//
+		if (!training.adminable){
+			throw new BadRequestError('لا يُمكن اتخذا هذا القرار لكونك لست مديرًا.');
+		}
+
+		//
+		return TrainingService.decideForPlayerIdToComeToId(playerId, id, false, false);
+	})
+
+	// Response about it.
+	.then(function(){
+		return response.status(204).send();
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+});
+
+// GET /trainings/:id/players/:playerId/apologize
+router.get('/trainings/:id/players/:playerId/apologize', authenticatable, function(request, response){
+
+	if (!validator.isNumeric(request.params.id) || !validator.isNumeric(request.params.playerId)){
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من اختيار تمرينٍ و لاعبٍ صحيحين.',
+		});
+	}
+
+	//
+	var id = request.params.id;
+	var playerId = request.params.playerId;
+
+	//
+	UserService.findCurrentOrDie(request)
+
+	//
+	.then(function(user){
+		return TrainingService.findForPlayerIdById(user.playerId, id);
+	})
+
+	//
+	.then(function(training){
+
+		//
+		if (!training){
+			throw new BadRequestError('لا يُمكن العثور على التمرين.');
+		}
+
+		//
+		if (!training.adminable){
+			throw new BadRequestError('لا يُمكن اتخذا هذا القرار لكونك لست مديرًا.');
+		}
+
+		console.log(training);
+
+		//
+		return TrainingService.decideForPlayerIdToApologizeToId(playerId, id);
+	})
+
+	// Response about it.
+	.then(function(){
+		return response.status(204).send();
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+});
