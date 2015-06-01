@@ -112,19 +112,21 @@ router.post('/users/update', authenticatable, function(request, response){
 
 	// Set the fullname value.
 	var fullname = request.body.fullname;
+	var u = null;
 
 	// Find the current user or die.
 	UserService.findCurrentOrDie(request)
 
 	// Update the fullname.
 	.then(function(user){
+		u = user;
 		return PlayerService.updateForId({fullname: fullname}, user.playerId);
 	})
 
 	// Response about it.
 	.then(function(player){
 		response.status(204).send();
-		return PlayerService.updateForId({loginable: 1}, player.id);
+		return UserService.updateForId({loginable: 1}, u.id);
 	})
 
 	// Catch the error if any.

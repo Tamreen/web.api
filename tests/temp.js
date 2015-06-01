@@ -104,10 +104,10 @@ require('../server');
 // 	});
 // });
 
-// TrainingService.decideForPlayerIdToComeToId(787, 119, false, false)
-// .then(function(done){
-// 	console.log('The player id has decided to come to the id.');
-// });
+TrainingService.decideForPlayerIdToComeToId(1, 105, false, false)
+.then(function(done){
+	console.log('The player id has decided to come to the id.');
+});
 
 // TrainingService.decideForPlayerIdToApologizeToId(10, 123)
 // .then(function(done){
@@ -130,3 +130,9 @@ require('../server');
 // .then(function(){
 // 	console.log('Should be okay.');
 // });
+
+// var notification = PushNotificationService.createIosNotification('Hello Mate!');
+
+// //
+// PushNotificationService.pushToIosChunks(notification, ['cd0dcad5b156757c9eaf49a9dd701e0f337fbbed0db55e8e5001b8ef35bb30ad']);
+

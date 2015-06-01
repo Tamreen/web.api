@@ -108,7 +108,7 @@ TrainingActivityService = {
 
 		//
 		trainingActivity.content = null;
-		trainingActivity.sound = null;
+		trainingActivity.sound = 'ping.aiff';
 		trainingActivity.icon = null;
 
 		switch (trainingActivity.type){

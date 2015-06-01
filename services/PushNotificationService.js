@@ -19,12 +19,12 @@ PushNotificationService = {
 	//
 	pushMessageToUsers: function(message, users){
 
-		// If the environment is development, the behavior should be different.
-		if (nconf.get('environment') == 'development'){
-			console.log(message);
-			console.log(users);
-			return;
-		}
+		// // If the environment is development, the behavior should be different.
+		// if (nconf.get('environment') == 'development'){
+		// 	console.log(message);
+		// 	console.log(users);
+		// 	return;
+		// }
 
 		//
 		var androidUserTokens = [];

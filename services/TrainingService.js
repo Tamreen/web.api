@@ -21,7 +21,7 @@ TrainingService = {
 	//
 	findForPlayerIdById: function(playerId, id){
 
-		var queryGetTraining = DatabaseService.format('select trainings.*, (select count(id) > 0 from trainingActivities where trainingId = trainings.id and type = \'training-allowed-professional\') as professionalable, (select decision from trainingPlayers where trainingId = trainings.id and playerId = tp.playerId) as playerDecision, (select count(groupPlayers.id) > 0 from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = tp.playerId and groups.id = trainings.groupId and users.deletedAt is null and groups.deletedAt is null and groupPlayers.leftAt is null and groupPlayers.role = \'admin\') as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'register-as-subset\') registerAsSubsetPlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'notyet\') as notyetPlayersCount from trainingPlayers tp, trainings where tp.trainingId = trainings.id and tp.playerId = ? and trainings.id = ?;', [playerId, id]);
+		var queryGetTraining = DatabaseService.format('select trainings.*, (select count(id) > 0 from trainingActivities where trainingId = trainings.id and type = \'training-allowed-professional\') as professionalable, (select decision from trainingPlayers where trainingId = trainings.id and playerId = tp.playerId) as playerDecision, (select count(groupPlayers.id) > 0 from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = tp.playerId and groups.id = trainings.groupId and users.deletedAt is null and groups.deletedAt is null and groupPlayers.leftAt is null and groupPlayers.role = \'admin\') as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'register-as-subset\') registerAsSubsetPlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'notyet\') as notyetPlayersCount from trainingPlayers tp, trainings where tp.trainingId = trainings.id and tp.playerId = ? and trainings.id = ?', [playerId, id]);
 		
 		return DatabaseService.query(queryGetTraining).then(function(trainings){
 
@@ -211,7 +211,7 @@ TrainingService = {
 	},
 
 	//
-	decideForPlayerIdToComeToId: function(playerId, id, isSubset, isprofessional){
+	decideForPlayerIdToComeToId: function(playerId, id, isSubset, isProfessional){
 
 		//
 		var t = null;
@@ -247,7 +247,7 @@ TrainingService = {
 			}
 
 			// Check if the training is already completed.
-			if (t.playersCount == t.willcomePlayersCount && (t.subsetPlayersCount == t.registerAsSubsetPlayersCount || isprofessional == true)){
+			if (t.playersCount == t.willcomePlayersCount && (t.subsetPlayersCount == t.registerAsSubsetPlayersCount || isProfessional == true)){
 				throw new BadRequestError('التمرين قد اكتمل مُسبقًا.');
 			}
 
