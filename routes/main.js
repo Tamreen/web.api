@@ -88,3 +88,8 @@ authenticatable = function(request, response, next){
 
 	});
 }
+
+// GET /versions/minclient
+router.get('/versions/minclient', function(request, response){
+	return response.send({'version': nconf.get('minClientVersion')});
+});
