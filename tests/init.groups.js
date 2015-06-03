@@ -1,13 +1,7 @@
 
-// var colors = require('colors/safe');
-
 require('../server');
 
-// TODO: Walk into users and set the device token of each empty.
-
-// TODO: Walk into players and set the names to different ones.
-
-// TODO: Walk into groups and walk into each training to set trainingPlayers.
+// Walk into groups and walk into each training to set trainingPlayers.
 
 DatabaseService.query('select * from groups')
 
@@ -54,5 +48,4 @@ DatabaseService.query('select * from groups')
 		})
 
 	});
-
 });
