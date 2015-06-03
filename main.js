@@ -1,5 +1,8 @@
 
 //
+morgan = require('morgan')
+
+//
 Promise = require('bluebird');
 using = Promise.using;
 
@@ -35,6 +38,9 @@ moment.locale('ar-sa');
 //
 app = express();
 port = 4000;
+
+// Log about it.
+app.use(morgan('combined'));
 
 // All that is related to session.
 app.use(session({
