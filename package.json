@@ -16,5 +16,8 @@
     "simple-nexmo": "^2.0.2",
     "twilio": "*",
     "validator": "*"
+  },
+  "devDependencies": {
+    "colors": "*"
   }
 }
