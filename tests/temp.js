@@ -104,17 +104,19 @@ require('../server');
 // 	});
 // });
 
-TrainingService.decideForPlayerIdToComeToId(1, 105, false, false)
-.then(function(done){
-	console.log('The player id has decided to come to the id.');
-});
+// TrainingService.decideForPlayerIdToComeToId(1, 105, false, false)
+// .then(function(done){
+// 	console.log('The player id has decided to come to the id.');
+// });
 
 // TrainingService.decideForPlayerIdToApologizeToId(10, 123)
 // .then(function(done){
 // 	console.log('The player id has decided to apologize to the id.');
 // });
 
-// SmsService.send('+112121', 'This is a message and it should be sent.');
+// nconf.set('environment', 'production');
+
+SmsService.send('+18053958839', 'تجربة إرسال رسالة.');
 
 // TrainingService.findById(121)
 // .then(function(training){
@@ -135,4 +137,3 @@ TrainingService.decideForPlayerIdToComeToId(1, 105, false, false)
 
 // //
 // PushNotificationService.pushToIosChunks(notification, ['cd0dcad5b156757c9eaf49a9dd701e0f337fbbed0db55e8e5001b8ef35bb30ad']);
-

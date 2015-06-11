@@ -1,7 +1,7 @@
 
 // Nexmo.
-// TODO: Simplify the name or something.
 simpleNexmo = require('simple-nexmo');
+phoneUtil = require('google-libphonenumber').phoneUtil;
 
 //
 nexmo = new simpleNexmo({
@@ -19,9 +19,21 @@ SmsService = {
 			return;
 		}
 
+		//
+		var from = nconf.get('nexmoNumber');
+
+		// Check if the number is a US number.
+		var toNumber = phoneUtil.parse(to, '');
+		var regionCode = phoneUtil.getRegionCodeForNumber(toNumber).toLowerCase();
+
+		if (regionCode == 'us'){
+			from = nconf.get('nexmoNumberUs');
+		}
+
+		//
 		nexmo.sendSMSMessage({
-			from: nconf.get('nexmoNumber'),
-			to: to,
+			from: SmsService.normalizeNumber(from),
+			to: SmsService.normalizeNumber(to),
 			type: 'unicode',
 			text: message,
 		}, function(error, response){
@@ -32,4 +44,8 @@ SmsService = {
 			}
 		});
 	},
+
+	normalizeNumber: function(number){
+		return number.replace('+', '');
+	}
 };
