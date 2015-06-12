@@ -30,6 +30,8 @@ SmsService = {
 			from = nconf.get('nexmoNumberUs');
 		}
 
+		console.log(SmsService.normalizeNumber(from));
+
 		//
 		nexmo.sendSMSMessage({
 			from: SmsService.normalizeNumber(from),
