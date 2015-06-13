@@ -22,7 +22,7 @@ TrainingAllowedProfessionalWorker = function(){
 };
 
 // The worker runs every minute (1m 60s 1000ms).
-setInterval(TrainingAllowedProfessionalWorker, nconf.get('trainingMinutesForProfessional') * 60 * 1000);
+setInterval(TrainingAllowedProfessionalWorker, 1*60*1000);
 
 // For testing purposes only.
 // TrainingAllowedProfessionalWorker();
