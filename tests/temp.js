@@ -116,7 +116,7 @@ require('../server');
 
 // nconf.set('environment', 'production');
 
-SmsService.send('+966553085572', 'تجربة إرسال رسالة.');
+SmsService.send('+9', 'تجربة إرسال رسالة.');
 
 // TrainingService.findById(121)
 // .then(function(training){
