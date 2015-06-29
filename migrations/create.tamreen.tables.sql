@@ -94,7 +94,7 @@ create table trainingActivities(
 	id bigint(20) not null auto_increment,
 	trainingId bigint(20) not null,
 	authorId bigint(20) not null,
-	type enum('training-started', 'player-decided-to-come', 'player-apologized', 'player-registered-as-subset', 'training-completed', 'training-not-completed', 'training-canceled') not null,
+	type enum('training-started','player-decided-to-come','player-apologized','player-registered-as-subset','training-completed','training-not-completed','training-canceled', 'player-brought-professional', 'training-allowed-professional') not null,
 	createdAt datetime not null,
 	primary key(id)
 );
