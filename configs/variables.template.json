@@ -1,0 +1,37 @@
+{
+	"environment": "development",
+	"minClientVersion": "1.0.5",
+
+	"appPort": 4000,
+	"appSalt": "visit https://www.grc.com/passwords.htm for more details",
+
+        "sslCert": "certificates/ssl/cert.crt",
+        "sslKey": "certificates/ssl/key.key",
+        "sslCa": "certificates/ssl/ca.crt",
+
+	"databaseHost": "localhost",
+	"databasePort": 3306,
+	"databaseUsername": "",
+	"databasePassword": "",
+	"databaseName": "",
+
+	"twilioAccountSid": "",
+	"twilioAuthToken": "",
+	"twilioNumber": "",
+
+	"nexmoApiKey": "",
+	"nexmoApiSecret": "",
+	"nexmoNumber": "",
+
+	"gcmSender": "",
+
+	"apnProduction": false,
+	"apnCertPem": "certificates/apn/dev/cert.pem",
+	"apnKeyPem": "certificates/apn/dev/key.pem",
+	"apnPassphrase": "",
+
+	"googlePlayUrl": "https://play.google.com/store/apps/details?id=com.tamreen.tamreen",
+	"appleStoreUrl": "https://itunes.apple.com/us/app/tmryn/id974963540?ls=1&mt=8",
+
+	"trainingMinutesForProfessional": 120
+}

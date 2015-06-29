@@ -1,8 +1,16 @@
 node_modules/
-certificates/apn/
-certificates/ssl/
-configs/
+
+certificates/apn/cert.pem
+certificates/apn/key.pem
+certificates/apn/dev
+
+certificates/ssl/ca.crt
+certificates/ssl/cert.crt
+certificates/ssl/key.key
+
+configs/variables.json
 
 npm-debug.log
+
 .DS_Store
 Thumbs.db
