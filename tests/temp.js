@@ -38,7 +38,10 @@ require('../server');
 // 	console.log(groups);
 // });
 
-// TrainingService.create({groupId: 6, name: 'Name of Something', status: 'gathering', stadium: 'stadium', startedAt: new Date(), playersCount: 10, subsetPlayersCount: 4, authorId: 1})
+// var startedAt = new Date();
+// startedAt.setDate(startedAt.getDate() + 10);
+
+// TrainingService.create({groupId: 6, name: 'Name of Something', status: 'gathering', stadium: 'stadium', startedAt: startedAt, playersCount: 10, subsetPlayersCount: 4, authorId: 1})
 
 // .then(function(training){
 // 	console.log(training);
@@ -116,19 +119,19 @@ require('../server');
 
 // nconf.set('environment', 'production');
 
-SmsService.send('+9', 'تجربة إرسال رسالة.');
+// SmsService.send('+9', 'تجربة إرسال رسالة.');
 
 // TrainingService.findById(121)
 // .then(function(training){
 // 	console.log(training);
 // });
 
-// 	TrainingService.decideForPlayerIdToComeToId(playerId, 121, false, false)
-// 	.then(function(done){
-// 		console.log('The player id has decided to come to the id.');
-// 	});
+// TrainingService.decideForPlayerIdToComeToId(1, 159, false, false)
+// .then(function(done){
+// 	console.log('The player id has decided to come to the id.');
+// });
 
-// TrainingService.bringProfessionalByPlayerIdForId({e164formattedMobileNumber: '+966553085526', fullname: 'فؤاد الهذلول'}, 1, 123)
+// TrainingService.bringProfessionalByPlayerIdForId({e164formattedMobileNumber: '+966553085526', fullname: 'فؤاد الهذلول'}, 1, 159)
 // .then(function(){
 // 	console.log('Should be okay.');
 // });
@@ -137,3 +140,11 @@ SmsService.send('+9', 'تجربة إرسال رسالة.');
 
 // //
 // PushNotificationService.pushToIosChunks(notification, ['cd0dcad5b156757c9eaf49a9dd701e0f337fbbed0db55e8e5001b8ef35bb30ad']);
+
+// TrainingService.findBestIdForPlayerIdOrDie(1, 159, false, false)
+
+// .then(function(training){
+// 	console.log(training);
+// });
+
+

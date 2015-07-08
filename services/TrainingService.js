@@ -211,11 +211,7 @@ TrainingService = {
 	},
 
 	//
-	decideForPlayerIdToComeToId: function(playerId, id, isSubset, isProfessional){
-
-		//
-		var t = null;
-		var ta = null;
+	findBestIdForPlayerIdOrDie: function(playerId, id, isSubset, isProfessional){
 
 		// Get the training by id.
 		return TrainingService.findForPlayerIdById(playerId, id)
@@ -228,28 +224,48 @@ TrainingService = {
 				throw new BadRequestError('لا يُمكن العثور على التمرين.');
 			}
 
-			//
-			t = training;
-
 			// Check if the training is already canceled.
-			if (t.status == 'canceled'){
+			if (training.status == 'canceled'){
 				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
 			}
 
 			// Check if the attending time for the training has ended.
-			if (new Date() > t.startedAt){
+			if (new Date() > training.startedAt){
 				throw new BadRequestError('التمرين قد انتهى مُسبقًا.');
 			}
 
 			// Check if the player id has decided.
-			if (t.playerDecision == 'willcome' || (t.playerDecision == 'register-as-subset' && isSubset == false)){
+			if (training.playerDecision == 'willcome' || (training.playerDecision == 'register-as-subset' && isSubset == false)){
 				throw new BadRequestError('اللاعب قد قرّر مُسبقًا.');
 			}
 
 			// Check if the training is already completed.
-			if (t.playersCount == t.willcomePlayersCount && (t.subsetPlayersCount == t.registerAsSubsetPlayersCount || isProfessional == true)){
+			if (training.playersCount == training.willcomePlayersCount && (training.subsetPlayersCount == training.registerAsSubsetPlayersCount || isProfessional == true)){
 				throw new BadRequestError('التمرين قد اكتمل مُسبقًا.');
 			}
+
+			//
+			return training;
+
+		});
+
+	},
+
+	//
+	decideForPlayerIdToComeToId: function(playerId, id, isSubset, isProfessional){
+
+		//
+		var t = null;
+		var ta = null;
+
+		// Get the training by id.
+		return TrainingService.findBestIdForPlayerIdOrDie(playerId, id, isSubset, isProfessional)
+
+		//
+		.then(function(training){
+
+			//
+			t = training;
 
 			// Check if there is enough space for attending as a major player.
 			if (t.playersCount > t.willcomePlayersCount){
@@ -407,45 +423,38 @@ TrainingService = {
 
 		var professional = null;
 
-		//
-		return TrainingService.findById(id)
+		// Create the user.
+		return UserService.findByE164formattedMobileNumberOrCreate(professionalParameters.e164formattedMobileNumber, {fullname: professionalParameters.fullname}, true)
 
-		// Find or create the professional.
-		.then(function(training){
-
-			// Check if the training is valid.
-			if (!training){
-				throw new BadRequestError('لا يُمكن العثور على التمرين.');
-			}
-
-			// Check if the training is already canceled.
-			if (training.status == 'canceled'){
-				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
-			}
-
-			//
-			return UserService.findByE164formattedMobileNumberOrCreate(professionalParameters.e164formattedMobileNumber, {fullname: professionalParameters.fullname}, true);
+		// Find the training.
+		.then(function(user){
+			professional = user;
+			return TrainingService.findById(id);
 		})
 
 		//
-		.then(function(user){
-			professional = user;
-			return TrainingPlayerService.findByTrainingIdAndPlayerId(id, professional.playerId);
+		.then(function(training){
+			return TrainingPlayerService.findByTrainingIdAndPlayerId(training.id, professional.playerId);
 		})
 
 		// Check if the user is already in the training.
 		.then(function(trainingPlayer){
 
 			if (trainingPlayer){
-				throw new BadRequestError('قد دُعي اللاعب للتمرين مُسبقًا.');
+				throw new BadRequestError('اللاعب هو عضو في المجموعة مُسبقًا.');
 			}
 
 			// Add the professional.
 			return TrainingPlayerService.create({trainingId: id, playerId: professional.playerId, decision: 'notyet'});
 		})
 
-		// Add a new activity of bringing a professional.
+		//
 		.then(function(trainingPlayer){
+			return TrainingService.findBestIdForPlayerIdOrDie(professional.playerId, id, false, true);
+		})
+
+		// Add a new activity of bringing a professional.
+		.then(function(training){
 			return TrainingActivityService.create({trainingId: id, authorId: playerId, type: 'player-brought-professional'});
 		})
 
