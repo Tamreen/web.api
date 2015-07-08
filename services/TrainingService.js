@@ -441,7 +441,7 @@ TrainingService = {
 		.then(function(trainingPlayer){
 
 			if (trainingPlayer){
-				throw new BadRequestError('اللاعب هو عضو في المجموعة مُسبقًا.');
+				throw new BadRequestError('اللاعب المحدّد موجود في المجموعة مُسبقًا.');
 			}
 
 			// Add the professional.
