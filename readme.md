@@ -10,7 +10,7 @@
 ## /api/v2
 
 GET /hellos
-RESPONSE {"name": "tamreen", "version": 2.0.0}
+RESPONSE {"name": "tamreen", "version": "2.0.0"}
 
 PUT /users/firsthandshake
 REQUEST {"e164formattedMobileNumber": "+966*********"}
@@ -45,4 +45,56 @@ REQUEST {"name": "Hello"}
 RESPONSE {"id": 134, "name": "Hello", "playersCount": 10}
 
 GET /groups/:id
-RESPONSE 
+RESPONSE {"id": 134, "name": "Lega", "createdAt": "12 Nov 2015", "adminable": true, "players": [{"fullname": "Zee", "joinedAt": "12 Nov 2015"}, ]}
+
+PUT /groups/:id
+REQUEST {"name": "Whatever"}
+RESPONSE {} # TODO: The response must be a group.
+
+POST /groups/:id/players
+REQUEST {"fullname": "Ali Khalid", "e164formattedMobileNumber": "+96655*******"}
+RESPONSE {} # TODO: The response must be a player.
+
+DELETE /groups/:id/players/:playerId
+RESPONSE 204
+
+POST /trainings
+REQUEST {"stadium": "Lega", "coordinates": "", "startedAt": "12 Nov 2015", "groups": [1, 5], "publicable": true, "playersCount": 20}
+RESPONSE {} # TODO: The response must be a training.
+
+GET /trainings/:id
+RESPONSE {"id": 12, "name": "Related Date Name", "stadium": "Lega", "coordinates": "", "startedAt": "12 Nov 2015", "decision": "willcome", "adminable": true, "status": "gathering", "percentage": 89, "willcomePlayers": [], "apologizePlayers": [], "notyetPlayers": []}
+
+PUT /trainings/:id/willcome
+RESPONSE 204
+
+PUT /trainings/:id/apologize
+RESPONSE 204
+
+PUT /trainings/:id
+REQUEST {"coordinates": "", }
+RESPONSE {} # TODO: The response must be a training.
+
+PUT /trainings/:id/professionalize
+RESPONSE 204
+
+PUT /trainings/:id/publicize
+RESPONSE 204
+
+PUT /trainings/:id/poke
+RESPONSE 204
+
+PUT /trainings/:id/cancel
+RESPONSE 204
+
+PUT /trainings/:id/players/:playerId/willcome
+RESPONSE 204
+
+PUT /trainings/:id/players/:playerId/apologize
+RESPONSE 204
+
+DELETE /groups/:id/players/:playerId
+RESPONSE 204
+
+PUT /groups/:id/players/:playerId/adminable
+RESPONSE 204
