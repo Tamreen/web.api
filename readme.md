@@ -9,8 +9,8 @@
 
 ## /api/v2
 
-GET /hellos
-RESPONSE 
+##### GET /hellos
+> RESPONSE 
 ```json
 {
 	"name": "tamreen", "version": "2.0.0"
