@@ -10,6 +10,16 @@
 
 ## /api/v2
 
+## TODO
+
+- [x] Send messeage.
+- [x] Check balance.
+- [x] Get status.
+- [ ] Send template message.
+- [ ] Delete messeage.
+- [ ] change password.
+- [ ] forget password.
+
 ##### GET /hellos
 > RESPONSE 
 
