@@ -20,7 +20,7 @@
 - [ ] change password.
 - [ ] forget password.
 
-##### GET /hellos
+##### [x] GET /hellos
 > RESPONSE 
 
 ```json
