@@ -10,17 +10,8 @@
 
 ## /api/v2
 
-## TODO
+- [x] GET /hellos
 
-- [x] Send messeage.
-- [x] Check balance.
-- [x] Get status.
-- [ ] Send template message.
-- [ ] Delete messeage.
-- [ ] change password.
-- [ ] forget password.
-
-##### [x] GET /hellos
 > RESPONSE 
 
 ```json
@@ -29,7 +20,8 @@
 }
 ```
 
-##### PUT /users/firsthandshake
+- [ ] PUT /users/firsthandshake
+
 > REQUEST
 
 ```json
