@@ -10,7 +10,7 @@
 
 ## /api/v2
 
-- [x] GET /hellos
+- [ ] GET /hellos
 
 > RESPONSE 
 
@@ -32,7 +32,8 @@
 
 > RESPONSE 204
 
-##### PUT /users/secondhandshake
+- [ ] PUT /users/secondhandshake
+
 > REQUEST
 
 ```json
@@ -50,7 +51,8 @@
 }
 ```
 
-##### PUT /players
+- [ ] PUT /players
+
 > REQUEST
 
 ```json
@@ -66,7 +68,8 @@
 }
 ```
 
-##### GET /notifications
+- [ ] GET /notifications
+
 > RESPONSE 
 
 ```json
@@ -75,8 +78,9 @@
 }
 ```
 
-##### GET /profiles/:id
-RESPONSE
+- [ ] GET /profiles/:id
+
+> RESPONSE
 
 ```json
 {
@@ -84,10 +88,12 @@ RESPONSE
 }
 ```
 
-##### PUT /users/logout
+- [ ] PUT /users/logout
+
 > RESPONSE 204
 
-##### GET /groups
+- [ ] GET /groups
+
 > RESPONSE
 
 ```json
@@ -96,7 +102,8 @@ RESPONSE
 ]
 ```
 
-##### GET /trainings/[specified|around]
+- [ ] GET /trainings/[specified|around]
+
 > REQUEST
 
 ```json
@@ -115,7 +122,8 @@ RESPONSE
 ]
 ```
 
-##### POST /groups
+- [ ] POST /groups
+
 > REQUEST
 
 ```json
@@ -131,7 +139,8 @@ RESPONSE
 }
 ```
 
-##### GET /groups/:id
+- [ ] GET /groups/:id
+
 > RESPONSE
 
 ```json
@@ -146,7 +155,8 @@ RESPONSE
 }
 ```
 
-##### PUT /groups/:id
+- [ ] PUT /groups/:id
+
 > REQUEST
 
 ```json
@@ -162,7 +172,8 @@ RESPONSE
 }
 ```
 
-##### POST /groups/:id/players
+- [ ] POST /groups/:id/players
+
 > REQUEST
 
 ```json
@@ -178,10 +189,12 @@ RESPONSE
 }
 ```
 
-##### DELETE /groups/:id/players/:playerId
+- [ ] DELETE /groups/:id/players/:playerId
+
 > RESPONSE 204
 
-##### POST /trainings
+- [ ] POST /trainings
+
 > REQUEST
 
 ```json
@@ -198,7 +211,8 @@ RESPONSE
 }
 ```
 
-##### GET /trainings/:id
+- [ ] GET /trainings/:id
+
 > RESPONSE
 
 ```json
@@ -212,13 +226,16 @@ RESPONSE
 }
 ```
 
-##### PUT /trainings/:id/willcome
+- [ ] PUT /trainings/:id/willcome
+
 > RESPONSE 204
 
-##### PUT /trainings/:id/apologize
+- [ ] PUT /trainings/:id/apologize
+
 > RESPONSE 204
 
-##### PUT /trainings/:id
+- [ ] PUT /trainings/:id
+
 > REQUEST 
 
 ```json
@@ -234,26 +251,34 @@ RESPONSE
 }
 ```
 
-##### PUT /trainings/:id/professionalize
+- [ ] PUT /trainings/:id/professionalize
+
 > RESPONSE 204
 
-##### PUT /trainings/:id/publicize
+- [ ] PUT /trainings/:id/publicize
+
 > RESPONSE 204
 
-##### PUT /trainings/:id/poke
+- [ ] PUT /trainings/:id/poke
+
 > RESPONSE 204
 
-##### PUT /trainings/:id/cancel
+- [ ] PUT /trainings/:id/cancel
+
 > RESPONSE 204
 
-##### PUT /trainings/:id/players/:playerId/willcome
+- [ ] PUT /trainings/:id/players/:playerId/willcome
+
 > RESPONSE 204
 
-##### PUT /trainings/:id/players/:playerId/apologize
+- [ ] PUT /trainings/:id/players/:playerId/apologize
+
 > RESPONSE 204
 
-##### DELETE /groups/:id/players/:playerId
+- [ ] DELETE /groups/:id/players/:playerId
+
 > RESPONSE 204
 
-##### PUT /groups/:id/players/:playerId/adminable
+- [ ] PUT /groups/:id/players/:playerId/adminable
+
 > RESPONSE 204
