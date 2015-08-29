@@ -10,7 +10,7 @@
 
 ## /api/v2
 
-##### [ ] GET /hellos
+##### GET /hellos
 > RESPONSE 
 
 ```json
@@ -19,8 +19,8 @@
 }
 ```
 
-##### [ ] PUT /users/firsthandshake
-> REQUEST 
+##### PUT /users/firsthandshake
+> REQUEST
 
 ```json
 {
@@ -49,55 +49,172 @@
 ```
 
 ##### PUT /players
-REQUEST {"fullname": "Hussam Zee"}
-RESPONSE {} # TODO: The response must be a user player.
+> REQUEST
+
+```json
+{
+	"fullname": "Hussam Zee"
+}
+```
+> RESPONSE
+
+```json
+{
+	# TODO: The response must be a user player.
+}
+```
 
 ##### GET /notifications
-RESPONSE {"trainingsCount": 12, "groupsCount": 5, "profilesCount": 9}
+> RESPONSE 
+
+```json
+{
+	"trainingsCount": 12, "groupsCount": 5, "profilesCount": 9
+}
+```
 
 ##### GET /profiles/:id
-RESPONSE {"fullname": "Hossam Zee", "location": "Riyadh"}
+RESPONSE
+
+```json
+{
+	"fullname": "Hossam Zee", "location": "Riyadh"
+}
+```
 
 ##### PUT /users/logout
-RESPONSE 204
+> RESPONSE 204
 
 ##### GET /groups
-RESPONSE [{"name": "Lega", "playersCount": 30}, ]
+> RESPONSE
+
+```json
+[
+	{"name": "Lega", "playersCount": 30}, 
+]
+```
 
 ##### GET /trainings/[specified|around]
-REQUEST {"coordinates": [12.4, 67.3]}
-RESPONSE [{"name": "Mon 2015", "startedAt": "12 Dec 2015", "status": "gathering", "percentage": 15}, ]
+> REQUEST
+
+```json
+{
+	"coordinates": [12.4, 67.3]
+}
+```
+> RESPONSE
+
+```json
+[
+	{
+		"name": "Mon 2015", "startedAt": "12 Dec 2015",
+		"status": "gathering", "percentage": 15
+	},
+]
+```
 
 ##### POST /groups
-REQUEST {"name": "Hello"}
-RESPONSE {"id": 134, "name": "Hello", "playersCount": 10}
+> REQUEST
+
+```json
+{
+	"name": "Hello"
+}
+```
+> RESPONSE
+
+```json
+{
+	"id": 134, "name": "Hello", "playersCount": 10
+}
+```
 
 ##### GET /groups/:id
-RESPONSE {"id": 134, "name": "Lega", "createdAt": "12 Nov 2015", "adminable": true, "players": [{"fullname": "Zee", "joinedAt": "12 Nov 2015"}, ]}
+> RESPONSE
+
+```json
+{
+	"id": 134, "name": "Lega",
+	"createdAt": "12 Nov 2015", "adminable": true, 
+	"players": [
+		{
+			"fullname": "Zee", "joinedAt": "12 Nov 2015"
+		}, 
+	]
+}
+```
 
 ##### PUT /groups/:id
-REQUEST {"name": "Whatever"}
-RESPONSE {} # TODO: The response must be a group.
+> REQUEST
+
+```json
+{
+	"name": "Whatever"
+}
+```
+> RESPONSE
+
+```json
+{
+	# TODO: The response must be a group.
+}
+```
 
 ##### POST /groups/:id/players
-REQUEST {"fullname": "Ali Khalid", "e164formattedMobileNumber": "+96655*******"}
-RESPONSE {} # TODO: The response must be a player.
+> REQUEST
+
+```json
+{
+	"fullname": "Ali Khalid", "e164formattedMobileNumber": "+96655*******"
+}
+```
+> RESPONSE
+
+```json
+{
+	# TODO: The response must be a player.
+}
+```
 
 ##### DELETE /groups/:id/players/:playerId
-RESPONSE 204
+> RESPONSE 204
 
 ##### POST /trainings
-REQUEST {"stadium": "Lega", "coordinates": "", "startedAt": "12 Nov 2015", "groups": [1, 5], "publicable": true, "playersCount": 20}
-RESPONSE {} # TODO: The response must be a training.
+> REQUEST
+
+```json
+{
+	"stadium": "Lega", "coordinates": "", "startedAt": "12 Nov 2015",
+	"groups": [1, 5], "publicable": true, "playersCount": 20
+}
+```
+> RESPONSE
+
+```json
+{
+	# TODO: The response must be a training.
+}
+```
 
 ##### GET /trainings/:id
-RESPONSE {"id": 12, "name": "Related Date Name", "stadium": "Lega", "coordinates": "", "startedAt": "12 Nov 2015", "decision": "willcome", "adminable": true, "status": "gathering", "percentage": 89, "willcomePlayers": [], "apologizePlayers": [], "notyetPlayers": []}
+> RESPONSE
+
+```json
+{
+	"id": 12, "name": "Related Date Name", "stadium": "Lega",
+	"coordinates": "", "startedAt": "12 Nov 2015", "decision": "willcome",
+	"adminable": true, "status": "gathering", "percentage": 89,
+	"willcomePlayers": [],
+	"apologizePlayers": [],
+	"notyetPlayers": []
+}
+```
 
 ##### PUT /trainings/:id/willcome
-RESPONSE 204
+> RESPONSE 204
 
 ##### PUT /trainings/:id/apologize
-RESPONSE 204
+> RESPONSE 204
 
 ##### PUT /trainings/:id
 > REQUEST 
