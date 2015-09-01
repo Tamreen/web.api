@@ -9,7 +9,6 @@
 - Run <code>node server.js</code>.
 
 ## /api/v2
-
 - [ ] GET /hellos
 
 > RESPONSE 
