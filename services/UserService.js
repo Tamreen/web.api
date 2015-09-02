@@ -52,7 +52,7 @@ UserService = {
 	//
 	findById: function(id){
 
-		var queryGetUserById = DatabaseService.format('select * from users where id = ? limit 1', [id]);
+		var queryGetUserById = DatabaseService.format('select users.*, players.fullname from users, players where users.playerId = players.id and users.id = ? limit 1', [id]);
 		
 		return DatabaseService.query(queryGetUserById).then(function(users){
 
