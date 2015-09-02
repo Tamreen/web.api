@@ -8,6 +8,10 @@
 - Update the variables in the file <code>configs/variables.json</code> with the appropriate values.
 - Run <code>node server.js</code>.
 
+## TODO:
+
+- Make the trainings start and complete.
+
 ## /api/v2
 - [ ] GET /hellos
 

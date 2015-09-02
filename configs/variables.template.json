@@ -1,6 +1,7 @@
 {
+	"appName": "Tamreen",
+	"version": "1.0.5",
 	"environment": "development",
-	"minClientVersion": "1.0.5",
 
 	"appPort": 4000,
 	"appSalt": "visit https://www.grc.com/passwords.htm for more details",

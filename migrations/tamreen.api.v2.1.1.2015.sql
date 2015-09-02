@@ -1,39 +1,47 @@
 
--- TODO: Update the enumns in 'type' column in trainingActivities.
+-- Delete every subset related decision.
 
--- player-decided-to-come, player-apologized, player-brought-professional, training-gathering-started, training-started, training-gathering-completed, training-gathering-not-completed, training-completed, training-canceled, training-professionalized, training-publicized, training-poked
+delete from trainingActivities where type = 'player-registered-as-subset';
 
--- TODO: Add 'coordinates' column in users.
+delete from trainingActivities where type = 'training-allowed-professional';
 
--- create table trainings(
--- 	id bigint(20) not null auto_increment,
--- 	groupId bigint(20) not null,
--- 	name varchar(200) not null,
--- 	status enum('gathering', 'completed', 'canceled') not null,
--- 	stadium varchar(200) not null,
--- 	startedAt datetime not null,
--- 	playersCount int(11) not null default 0,
--- 	subsetPlayersCount int(11) not null default 0,
--- 	createdAt datetime not null,
--- 	modifiedAt datetime null default null,
--- 	primary key(id)
--- );
+delete from trainingPlayers where decision = 'register-as-subset';
 
-status? -> gathering, gathering-completed, canceled, completed
-publicized?
-professionalized?
-coordinates?
-'no' subsetPlayersCount
+-- Update the enumns in 'type' column in trainingActivities.
 
--- create table trainingPlayers(
--- 	id bigint(20) not null auto_increment,
--- 	trainingId bigint(20) not null,
--- 	playerId bigint(20) not null,
--- 	decision enum('notyet', 'willcome', 'apologize', 'register-as-subset') not null,
--- 	createdAt datetime not null,
--- 	modifiedAt datetime null default null,
--- 	primary key(id)
--- );
+-- This is a trick.
 
-role? -> admin, member
-decision -> 'no' register-as-subset
+alter table trainingActivities modify column type enum('training-gathering-started', 'player-decided-to-come', 'player-apologized', 'training-gathering-completed', 'training-gathering-not-completed', 'training-poked', 'training-professionalized', 'player-brought-professional', 'training-publicized', 'training-canceled', 'training-started', 'training-completed', 'training-not-completed');
+
+-- Update old type values in trainingActivities.
+
+update trainingActivities set type = 'training-gathering-not-completed' where type = 'training-not-completed';
+
+update trainingActivities set type = 'training-started' where type = 'training-gathering-started';
+
+update trainingActivities set type = 'training-completed' where type = 'training-gathering-completed';
+
+alter table trainingActivities modify column type enum('training-gathering-started', 'player-decided-to-come', 'player-apologized', 'training-gathering-completed', 'training-gathering-not-completed', 'training-poked', 'training-professionalized', 'player-brought-professional', 'training-publicized', 'training-canceled', 'training-started', 'training-completed');
+
+-- Add 'coordinates' and other columns in trainings.
+
+alter table trainings modify column status enum('gathering', 'gathering-completed', 'canceled', 'started', 'completed') not null;
+
+alter table trainings add column coordinates point null default null after stadium;
+
+alter table trainings add column professionalized tinyint(1) not null default 0 after playersCount;
+
+alter table trainings add column publicized tinyint(1) not null default 0 after professionalized;
+
+alter table trainings drop column subsetPlayersCount;
+
+-- Update old status values in trainings.
+
+update trainings set status = 'gathering-completed' where status = 'completed';
+
+-- Add 'role' and modify 'decision' in trainingPlayers.
+
+alter table trainingPlayers add column role enum('member', 'admin') not null;
+
+alter table trainingPlayers modify column decision enum('notyet', 'willcome', 'apologize') not null;
+
