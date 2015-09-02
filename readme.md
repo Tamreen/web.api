@@ -13,7 +13,7 @@
 - Make the trainings start and complete.
 
 ## /api/v2
-- [ ] GET /hellos
+- [x] GET /hellos
 
 > RESPONSE 
 

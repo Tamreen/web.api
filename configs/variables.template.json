@@ -1,6 +1,7 @@
 {
 	"appName": "Tamreen",
-	"version": "1.0.5",
+	"appVersion": "1.0.5",
+	
 	"environment": "development",
 
 	"appPort": 4000,
