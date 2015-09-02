@@ -1,6 +1,6 @@
 
-// POST /users/firsthandshake
-router.post('/users/firsthandshake', function(request, response){
+// PUT /users/firsthandshake
+router.put('/users/firsthandshake', function(request, response){
 
 	// Validate the mobile number.
 	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.get('X-User-Device-Type')) || validator.isNull(request.get('X-User-Device-Token'))){
@@ -29,8 +29,8 @@ router.post('/users/firsthandshake', function(request, response){
 	return SmsService.send(e164formattedMobileNumber, 'تطبيق تمرين - كلمة المرور المؤقتة ' + code);
 });
 
-// POST /users/secondhandshake
-router.post('/users/secondhandshake', function(request, response){
+// PUT /users/secondhandshake
+router.put('/users/secondhandshake', function(request, response){
 
 	// Validate the mobile number and the code.
 	if (!e164Format.test(request.body.e164formattedMobileNumber) || validator.isNull(request.session.code) || !validator.equals(request.body.code, request.session.code)){

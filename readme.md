@@ -35,7 +35,7 @@
 
 > RESPONSE 204
 
-- [ ] PUT /users/secondhandshake
+- [x] PUT /users/secondhandshake
 
 > REQUEST
 
