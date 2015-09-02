@@ -23,7 +23,7 @@
 }
 ```
 
-- [ ] PUT /users/firsthandshake
+- [x] PUT /users/firsthandshake
 
 > REQUEST
 
