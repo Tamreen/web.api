@@ -29,6 +29,10 @@ alter table trainings modify column status enum('gathering', 'gathering-complete
 
 alter table trainings add column coordinates point null default null after stadium;
 
+alter table trainings add index coordinates(coordinates);
+
+-- TODO: The coordinates column must be indexed.
+
 alter table trainings add column professionalized tinyint(1) not null default 0 after playersCount;
 
 alter table trainings add column publicized tinyint(1) not null default 0 after professionalized;

@@ -11,8 +11,8 @@ require('./routes');
 // Require the needed workers.
 require('./workers');
 
-// Attach all previous routes under /api/v1.
-app.use('/api/v1', router);
+// Attach all previous routes under /api/v2.
+app.use('/api/v2', router);
 
 // Start listening to the specified port.
 // app.listen(port);
