@@ -115,7 +115,7 @@
 }
 ```
 
-- [ ] PUT /users/logout
+- [x] PUT /users/logout
 
 > RESPONSE 204
 
