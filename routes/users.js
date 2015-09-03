@@ -101,36 +101,3 @@ router.get('/users/logout', authenticatable, function(request, response){
 	});
 });
 
-// POST /users/update
-router.post('/users/update', authenticatable, function(request, response){
-
-	if (validator.isNull(request.body.fullname)){
-		return response.status(400).send({
-			'message': 'الرجاء التأكّد من إدخال الاسم الكامل بشكلٍ صحيحٍ.',
-		});
-	}
-
-	// Set the fullname value.
-	var fullname = request.body.fullname;
-	var u = null;
-
-	// Find the current user or die.
-	UserService.findCurrentOrDie(request)
-
-	// Update the fullname.
-	.then(function(user){
-		u = user;
-		return PlayerService.updateForId({fullname: fullname}, user.playerId);
-	})
-
-	// Response about it.
-	.then(function(player){
-		response.status(204).send();
-		return UserService.updateForId({loginable: 1}, u.id);
-	})
-
-	// Catch the error if any.
-	.catch(function(error){
-		return handleApiErrors(error, response);
-	});
-});
