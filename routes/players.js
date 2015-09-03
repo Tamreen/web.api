@@ -36,3 +36,34 @@ router.put('/players', authenticatable, function(request, response){
 		return handleApiErrors(error, response);
 	});
 });
+
+// GET /players/:id
+router.get('/players/:id', authenticatable, function(request, response){
+
+	if (!validator.isNumeric(request.params.id)){
+		return response.status(400).send({
+			'message': 'الرجء التأكّد من اختيار معرّف لاعب صحيح.',
+		});
+	}
+
+	//
+	var id = request.params.id;
+
+	//
+	PlayerService.findById(id)
+
+	//
+	.then(function(player){
+
+		if (!player){
+			return response.status(404).send({
+				'message': 'لم يتم العثور على اللاعب المطلوب.',
+			});
+		}
+
+		//
+		return response.send(player);
+
+	})
+
+});

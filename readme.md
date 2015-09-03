@@ -94,7 +94,7 @@
 
 - [x] GET /activities
 
-> RESPONSE 
+> RESPONSE 200
 
 ```json
 {
@@ -102,13 +102,16 @@
 }
 ```
 
-- [ ] GET /profiles/:id
+- [x] GET /players/:id
 
-> RESPONSE
+> RESPONSE 200
 
 ```json
 {
-	"fullname": "Hossam Zee", "location": "Riyadh"
+    "id": 1,
+    "fullname": "وسام الخالد",
+    "modifiedAt": "2015-09-03T06:19:49.000Z",
+    "createdAt": "2015-03-27T14:43:56.000Z"
 }
 ```
 
