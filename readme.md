@@ -51,17 +51,17 @@
 
 ```json
 {
-	id: 1,
-	playerId: 1,
-	e164formattedMobileNumber: '+966*********',
-	token: '3c57d95eca55efdefe8c1aa58bd855e7d476a49ba744f0e7a966428fa099374f',
-	deviceType: 'android',
-	deviceToken: null,
-	loginable: 1,
-	createdAt: Fri Mar 27 2015 17:43:56 GMT+0300 (AST),
-	modifiedAt: Wed Jul 29 2015 05:31:36 GMT+0300 (AST),
-	deletedAt: null,
-	fullname: 'ناصر الأيمن
+	"id": 1,
+	"playerId": 1,
+	"e164formattedMobileNumber": "+966*********",
+	"token": "3c57d95eca55efdefe8c1aa58bd855e7d476a49ba744f0e7a966428fa099374f",
+	"deviceType": "android",
+	"deviceToken": null,
+	"loginable": 1,
+	"createdAt": "2015-03-27T14:43:56.000Z",
+	"modifiedAt": "2015-09-03T06:18:30.000Z",
+	"deletedAt": null,
+	"fullname": "وسام الخالد"
 }
 ```
 
