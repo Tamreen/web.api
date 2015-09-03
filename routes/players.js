@@ -23,8 +23,12 @@ router.put('/players', authenticatable, function(request, response){
 
 	// Response about it.
 	.then(function(player){
-		response.status(204).send();
 		return UserService.updateForId({loginable: 1}, u.id);
+	})
+
+	//
+	.then(function(user){
+		response.send(user);
 	})
 
 	// Catch the error if any.

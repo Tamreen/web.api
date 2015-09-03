@@ -15,7 +15,7 @@
 ## /api/v2
 - [x] GET /hellos
 
-> RESPONSE 
+> RESPONSE 200
 
 ```json
 {
@@ -64,7 +64,7 @@
 }
 ```
 
-- [ ] PUT /players
+- [x] PUT /players
 
 > REQUEST
 
@@ -73,11 +73,21 @@
 	"fullname": "Hussam Zee"
 }
 ```
-> RESPONSE
+> RESPONSE 200
 
 ```json
 {
-	# TODO: The response must be a user player.
+    "id": 1,
+    "playerId": 1,
+    "e164formattedMobileNumber": "+966*********",
+    "token": "3c57d95eca55efdefe8c1aa58bd855e7d476a49ba744f0e7a966428fa099374f",
+    "deviceType": "android",
+    "deviceToken": null,
+    "loginable": 1,
+    "createdAt": "2015-03-27T14:43:56.000Z",
+    "modifiedAt": "2015-09-03T06:18:30.000Z",
+    "deletedAt": null,
+    "fullname": "وسام الخالد"
 }
 ```
 
