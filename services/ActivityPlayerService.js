@@ -32,6 +32,7 @@ ActivityPlayerService = {
 
 			//
 			var activityPlayer = activityPlayers[0];
+
 			return activityPlayer;
 		});
 	},
@@ -76,4 +77,28 @@ ActivityPlayerService = {
 			return DatabaseService.query(queryUpdateActivityPlayer);
 		});
 	},
+
+	//
+	countNotReadForPlayerId: function(playerId){
+
+		var queryCountPlayerActivities = DatabaseService.format('select count(*) as count from activityPlayers where readable = 0 and playerId = ?', [playerId]);
+
+		//
+		return DatabaseService.query(queryCountPlayerActivities)
+
+		//
+		.then(function(activityPlayerResults){
+
+			//
+			if (activityPlayerResults.length == 0){
+				return null;
+			}
+			
+			//
+			var activityPlayerResult = activityPlayerResults[0];
+			return activityPlayerResult.count;
+		});
+
+	}
+
 };

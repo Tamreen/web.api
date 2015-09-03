@@ -11,6 +11,7 @@
 ## TODO:
 
 - Make the trainings start and complete.
+- Create a worker to make the activities of all players read if a training completed or canceled.
 
 ## /api/v2
 - [x] GET /hellos
@@ -91,13 +92,13 @@
 }
 ```
 
-- [ ] GET /notifications
+- [x] GET /activities
 
 > RESPONSE 
 
 ```json
 {
-	"trainingsCount": 12, "groupsCount": 5, "profilesCount": 9
+	"count": 12
 }
 ```
 

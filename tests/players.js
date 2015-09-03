@@ -1,5 +1,5 @@
 
-require('../server.js');
+require('../server');
 require('colors');
 
 //
