@@ -39,13 +39,15 @@ alter table trainings add column publicized tinyint(1) not null default 0 after 
 
 alter table trainings drop column subsetPlayersCount;
 
+alter table trainings drop column groupId;
+
 -- Update old status values in trainings.
 
 update trainings set status = 'gathering-completed' where status = 'completed';
 
 -- Add 'role' and modify 'decision' in trainingPlayers.
 
-alter table trainingPlayers add column role enum('member', 'admin') not null;
+alter table trainingPlayers add column role enum('member', 'admin') not null after playerId;
 
 alter table trainingPlayers modify column decision enum('notyet', 'willcome', 'apologize') not null;
 

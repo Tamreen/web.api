@@ -119,7 +119,7 @@
 
 > RESPONSE 204
 
-- [ ] GET /groups
+- [x] GET /groups
 
 > RESPONSE
 
