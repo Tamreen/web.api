@@ -29,8 +29,13 @@ GroupService = {
 	//
 	findByIdForPlayerId: function(id, playerId){
 
-		var queryFindGroupByIdForPlayerId = DatabaseService.format('select userGroups.*, (select fullname from players where players.id = userGroups.authorId) as author, (select count(id) from groupPlayers where groupPlayers.groupId in (userGroups.id) and groupPlayers.leftAt is null) as playersCount, (select count(id) from activityPlayers where playerId = userGroups.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId in (select id from trainings where groupId in (userGroups.id)))) as activitiesCount from (select groups.*, groupPlayers.playerId as playerId, (groupPlayers.role = \'admin\') as adminable from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null) as userGroups', [playerId, id]);
+		// The variable to hold the group value.
+		var g = null;
 
+		//
+		var queryFindGroupByIdForPlayerId = DatabaseService.format('select groups.*, (groupPlayers.role = \'admin\') as adminable from groupPlayers, groups where groupPlayers.groupId = groups.id and groupPlayers.groupId = ? and groupPlayers.playerId = ? and groupPlayers.leftAt is null and groups.deletedAt is null', [id, playerId]);
+
+		//
 		return DatabaseService.query(queryFindGroupByIdForPlayerId).then(function(groups){
 
 			if (groups.length == 0){
@@ -39,6 +44,31 @@ GroupService = {
 
 			var group = groups[0];
 			return group;
+		})
+
+		//
+		.then(function(group){
+
+			//
+			if (validator.isNull(group)){
+				return null;
+			}
+
+			//
+			g = group;
+
+			var queryGetGroupPlayers = DatabaseService.format('select players.id, players.fullname, groupPlayers.role, groupPlayers.joinedAt from players, groupPlayers where players.id = groupPlayers.playerId and groupPlayers.groupId = ? and groupPlayers.leftAt is null', [group.id]);
+
+			return DatabaseService.query(queryGetGroupPlayers);
+
+		})
+
+		//
+		.then(function(players){
+
+			g.players = players;
+			return g;
+
 		});
 	},
 

@@ -21,11 +21,12 @@ router.get('/groups', authenticatable, function(request, response){
 });
 
 // GET /groups/latest
+// TODO: Consider deleting the route.
 router.get('/groups/latest', authenticatable, function(request, response){
 	response.redirect('/api/v1/groups');
 });
 
-// GET /groups
+// GET /groups/:id
 router.get('/groups/:id', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){

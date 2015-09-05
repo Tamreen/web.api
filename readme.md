@@ -166,7 +166,7 @@
 }
 ```
 
-- [ ] GET /groups/:id
+- [x] GET /groups/:id
 
 > RESPONSE
 
