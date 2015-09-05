@@ -54,8 +54,8 @@ router.get('/groups/:id', authenticatable, function(request, response){
 	});
 });
 
-// POST /groups/add
-router.post('/groups/add', authenticatable, function(request, response){
+// POST /groups
+router.post('/groups', authenticatable, function(request, response){
 
 	if (validator.isNull(request.body.name)){
 		return response.status(400).send({

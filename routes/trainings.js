@@ -70,6 +70,9 @@ router.get('/trainings/around', authenticatable, function(request, response){
 	}
 
 	//
+	UserService.findCurrentOrDie(request)
+
+	//
 	.then(function(user){
 		return TrainingService.listAroundForPlayerId(user.playerId, {location: location});
 	})

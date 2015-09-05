@@ -61,7 +61,7 @@ TrainingService = {
 	// TODO: The method to be completed.
 	listAroundForPlayerId: function(playerId, parameters){
 
-		var queryListAroundTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?) and location near by ?', [parameters.location]);
+		var queryListAroundTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?) and st_distance(coordinates, ?) as distance order by distance asc', [parameters.coordinates]);
 
 		return DatabaseService.query(queryListSpecifiedTrainings);
 	},

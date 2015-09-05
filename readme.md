@@ -149,7 +149,7 @@
 ]
 ```
 
-- [ ] POST /groups
+- [x] POST /groups
 
 > REQUEST
 
