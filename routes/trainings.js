@@ -1,22 +1,49 @@
 
 // GET /groups/:groupId/trainings
-router.get('/groups/:groupId/trainings', authenticatable, function(request, response){
+// router.get('/groups/:groupId/trainings', authenticatable, function(request, response){
 
-	if (!validator.isNumeric(request.params.groupId)){
-		return response.status(400).send({
-			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
-		});
-	}
+// 	if (!validator.isNumeric(request.params.groupId)){
+// 		return response.status(400).send({
+// 			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
+// 		});
+// 	}
 
-	//
-	var groupId = request.params.groupId;
+// 	//
+// 	var groupId = request.params.groupId;
+
+// 	//
+// 	UserService.findCurrentOrDie(request)
+
+// 	//
+// 	.then(function(user){
+// 		return TrainingService.listForGroupIdAndPlayerId(groupId, user.playerId);
+// 	})
+
+// 	// Response about it.
+// 	.then(function(trainings){
+// 		return response.send(trainings);
+// 	})
+
+// 	// Catch the error if any.
+// 	.catch(function(error){
+// 		return handleApiErrors(error, response);
+// 	});
+// });
+
+// GET /groups/:groupId/trainings/latest
+// router.get('/groups/:groupId/trainings/latest', authenticatable, function(request, response){
+// 	response.redirect('/api/v1/groups/' + request.params.groupId + '/trainings');
+// });
+
+// GET /trainings/specified
+router.get('/trainings/specified', authenticatable, function(request, response){
 
 	//
 	UserService.findCurrentOrDie(request)
 
 	//
 	.then(function(user){
-		return TrainingService.listForGroupIdAndPlayerId(groupId, user.playerId);
+		return TrainingService.listSpecifiedForPlayerId(user.playerId);
 	})
 
 	// Response about it.
@@ -28,11 +55,32 @@ router.get('/groups/:groupId/trainings', authenticatable, function(request, resp
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
+
 });
 
-// GET /groups/:groupId/trainings/latest
-router.get('/groups/:groupId/trainings/latest', authenticatable, function(request, response){
-	response.redirect('/api/v1/groups/' + request.params.groupId + '/trainings');
+// GET /trainings/around
+router.get('/trainings/around', authenticatable, function(request, response){
+
+	// TODO: Validate the location.
+
+	//
+	UserService.findCurrentOrDie(request)
+
+	//
+	.then(function(user){
+		return TrainingService.listAroundForPlayerId(user.playerId, {location: location});
+	})
+
+	// Response about it.
+	.then(function(trainings){
+		return response.send(trainings);
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+
 });
 
 // POST /groups/:groupId/trainings/add
