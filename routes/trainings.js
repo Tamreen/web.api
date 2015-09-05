@@ -61,10 +61,13 @@ router.get('/trainings/specified', authenticatable, function(request, response){
 // GET /trainings/around
 router.get('/trainings/around', authenticatable, function(request, response){
 
-	// TODO: Validate the location.
-
-	//
-	UserService.findCurrentOrDie(request)
+	// TODO: Validate the location, it should be coordinates.
+	// Not sure how the coordinates will be, but basically: [12.4534, 16.2220].
+	if (validator.isNull(request.body.location)){
+		return response.status(400).send({
+			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
+		});
+	}
 
 	//
 	.then(function(user){

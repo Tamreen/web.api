@@ -49,12 +49,14 @@ TrainingService = {
 		});
 	},
 
-	listForGroupIdAndPlayerId: function(groupId, playerId){
+	//
+	listSpecifiedForPlayerId: function(playerId){
 
-		var queryListTrainingsForGroupIdAndPlayerId = DatabaseService.format('select userTrainings.id, userTrainings.name, userTrainings.status, (select count(id) from activityPlayers where playerId = userTrainings.playerId and readable = 0 and activityId in (select id from trainingActivities where trainingId = userTrainings.id)) as activitiesCount from (select trainings.*, users.playerId as playerId from groupPlayers, users, groups, trainings where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groupPlayers.groupId = ? and groupPlayers.leftAt is null and groups.deletedAt is null and trainings.groupId = groups.id) as userTrainings order by coalesce(userTrainings.modifiedAt, userTrainings.createdAt) desc', [playerId, groupId]);
+		var queryListSpecifiedTrainings = DatabaseService.format('select id, playersCount, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?)', [playerId]);
 
-		return DatabaseService.query(queryListTrainingsForGroupIdAndPlayerId);
-	},
+		return DatabaseService.query(queryListSpecifiedTrainings);
+
+	}
 
 	//
 	create: function(parameters){
