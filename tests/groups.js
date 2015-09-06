@@ -19,11 +19,12 @@ require('../server');
 
 // });
 
-// Update a group.
-GroupService.updateForId({name: 'Arsenal'}, 1)
+// // Update a group.
+// GroupService.updateForId({name: 'Arsenal'}, 1)
 
-.then(function(group){
+// .then(function(group){
 
-	console.log(group);
+// 	console.log(group);
 
-});
+// });
+

@@ -189,52 +189,23 @@ router.get('/groups/:id/delete', authenticatable, function(request, response){
 	});
 });
 
-// GET /groups/:groupId/players
-router.get('/groups/:groupId/players', authenticatable, function(request, response){
-
-	if (!validator.isNumeric(request.params.groupId)){
-		return response.status(400).send({
-			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
-		});
-	}
-
-	var groupId = request.params.groupId;
-
-	//
-	UserService.findCurrentOrDie(request)
-
-	//
-	.then(function(user){
-		return GroupService.listPlayersByIdForPlayerId(groupId, user.playerId);
-	})
-
-	// Response about it.
-	.then(function(players){
-		return response.send(players);
-	})
-
-	// Catch the error if any.
-	.catch(function(error){
-		return handleApiErrors(error, response);
-	});
-});
-
+// TODO: Consider deleting the route.
 // GET /groups/:groupId/players/latest
 router.get('/groups/:groupId/players/latest', authenticatable, function(request, response){
 	response.redirect('/api/v1/groups/' + request.params.groupId + '/players');
 });
 
-// POST /groups/:groupId/players/add
-router.post('/groups/:groupId/players/add', authenticatable, function(request, response){
+// POST /groups/:id/players
+router.post('/groups/:id/players', authenticatable, function(request, response){
 
-	if (!validator.isNumeric(request.params.groupId) || validator.isNull(request.body.fullname) || !e164Format.test(request.body.e164formattedMobileNumber)){
+	if (!validator.isNumeric(request.params.id) || validator.isNull(request.body.fullname) || !e164Format.test(request.body.e164formattedMobileNumber)){
 		return response.status(400).send({
 			'message': 'الرجاء التأكّد من توفّر المعلومات الكاملة الخاصّة باللاعب.',
 		});
 	}
 
 	// Define variables to be used.
-	var groupId = request.params.groupId;
+	var id = request.params.id;
 	var fullname = request.body.fullname;
 	var e164formattedMobileNumber = request.body.e164formattedMobileNumber;
 
@@ -243,16 +214,19 @@ router.post('/groups/:groupId/players/add', authenticatable, function(request, r
 
 	//
 	.then(function(user){
-		return GroupService.checkIsPlayerIdAdminForIdOrDie(user.playerId, groupId);
+		console.log('GroupService.checkIsPlayerIdAdminForIdOrDie is about to be called.');
+		return GroupService.checkIsPlayerIdAdminForIdOrDie(user.playerId, id);
 	})
 
 	//
 	.then(function(){
-		return GroupService.addPlayerToId(e164formattedMobileNumber, fullname, groupId);
+		console.log('GroupService.addPlayerToId is about to be called.', id);
+		return GroupService.addPlayerToId({e164formattedMobileNumber: e164formattedMobileNumber, fullname: fullname}, id);
 	})
 
 	// Response about it.
 	.then(function(playerGroup){
+		console.log('response.status(201).send is about to be called.');
 		return response.status(201).send(playerGroup);
 	})
 

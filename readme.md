@@ -208,7 +208,7 @@
 	"fullname": "Ali Khalid", "e164formattedMobileNumber": "+96655*******"
 }
 ```
-> RESPONSE
+> RESPONSE 201
 
 ```json
 {

@@ -5,7 +5,9 @@ PlayerService = {
 	//
 	findById: function(id){
 
-		var queryGetPlayerById = DatabaseService.format('select players.*, users.createdAt from players, users where players.id = users.playerId and players.id = ? limit 1', [id]);
+		// var queryGetPlayerById = DatabaseService.format('select players.*, users.createdAt from players, users where players.id = users.playerId and players.id = ? limit 1', [id]);
+
+		var queryGetPlayerById = DatabaseService.format('select * from players where id = ? limit 1', [id]);
 		
 		return DatabaseService.query(queryGetPlayerById).then(function(players){
 

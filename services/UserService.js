@@ -85,6 +85,7 @@ UserService = {
 	findByE164formattedMobileNumberOrCreate: function(e164formattedMobileNumber, parameters, invited){
 		
 		// Find the 
+		console.log('UserService.findByE164formattedMobileNumber is about to be called.');
 		return UserService.findByE164formattedMobileNumber(e164formattedMobileNumber)
 		
 		.then(function(user){
@@ -95,6 +96,7 @@ UserService = {
 				parameters.e164formattedMobileNumber = e164formattedMobileNumber;
 
 				// Create the user if does not exist.
+				console.log('UserService.create is about to be called.');
 				return UserService.create(parameters, invited);
 			}
 
@@ -106,6 +108,7 @@ UserService = {
 	create: function(parameters, invited){
 
 		// Create a player first.
+		console.log('PlayerService.create is about to be called.');
 		return PlayerService.create({fullname: parameters.fullname})
 
 		// Create the user.
@@ -121,6 +124,7 @@ UserService = {
 
 			var queryInsertUser = DatabaseService.format('insert into users set ?', parameters);
 			
+			console.log('DatabaseService.query is about to be called.');
 			return DatabaseService.query(queryInsertUser);
 		})
 

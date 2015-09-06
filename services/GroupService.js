@@ -186,10 +186,11 @@ GroupService = {
 	},
 
 	//
-	addPlayerToId: function(e164formattedMobileNumber, fullname, id){
+	addPlayerToId: function(parameters, id){
 
 		//
-		return UserService.findByE164formattedMobileNumberOrCreate(e164formattedMobileNumber, {fullname: fullname}, true)
+		console.log('UserService.findByE164formattedMobileNumberOrCreate is about to be called.');
+		return UserService.findByE164formattedMobileNumberOrCreate(parameters.e164formattedMobileNumber, {fullname: parameters.fullname}, true)
 
 		//
 		.then(function(user){
@@ -198,6 +199,7 @@ GroupService = {
 				throw new BadRequestError('لا يُمكن إضافة لاعب غير نشط إلى المجموعة.');
 			}
 
+			console.log('GroupService.joinByIdForPlayerId is about to be called.');
 			return GroupService.joinByIdForPlayerId(id, user.playerId);
 		});
 	},
@@ -244,7 +246,7 @@ GroupService = {
 		return new Promise(function(resolve, reject){
 
 			// Check if the user is admin.
-			var queryGetGroupPlayer = DatabaseService.format('select groupPlayers.* from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [playerId, id])
+			var queryGetGroupPlayer = DatabaseService.format('select groupPlayers.* from groupPlayers, groups where groupPlayers.groupId = groups.id and groupPlayers.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [playerId, id])
 
 			//
 			DatabaseService.query(queryGetGroupPlayer)
