@@ -182,7 +182,7 @@
 }
 ```
 
-- [ ] PUT /groups/:id
+- [x] PUT /groups/:id
 
 > REQUEST
 
@@ -191,11 +191,11 @@
 	"name": "Whatever"
 }
 ```
-> RESPONSE
+> RESPONSE 200
 
 ```json
 {
-	# TODO: The response must be a group.
+	# TODO: The response must be a group (maybe with the players).
 }
 ```
 

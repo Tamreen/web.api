@@ -34,6 +34,7 @@ TrainingService = {
 		});
 	},
 
+	//
 	addGroupIdPlayersForPlayerIdToId: function(groupId, playerId, id){
 
 		return GroupService.listPlayersByIdForPlayerId(groupId, playerId)
@@ -49,7 +50,7 @@ TrainingService = {
 		});
 	},
 
-	// TODO: The method to be completed.
+	// TODO: What about canceled trainings, it would show forever.
 	listSpecifiedForPlayerId: function(playerId){
 
 		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\')', [playerId]);
@@ -61,7 +62,7 @@ TrainingService = {
 	// TODO: The method to be completed.
 	listAroundForPlayerId: function(playerId, parameters){
 
-		var queryListAroundTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?) and st_distance(coordinates, ?) as distance order by distance asc', [parameters.coordinates]);
+		var queryListAroundTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and st_distance(coordinates, ?) as distance order by distance asc', [parameters.coordinates]);
 
 		return DatabaseService.query(queryListSpecifiedTrainings);
 	},

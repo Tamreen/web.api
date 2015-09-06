@@ -2,7 +2,7 @@
 //
 GroupService = {
 
-	//
+	// TODO: The following method could cause actually a conflict.
 	findById: function(id){
 
 		var queryGetGroupById = DatabaseService.format('select * from groups where id = ? limit 1', [id]);
@@ -39,7 +39,7 @@ GroupService = {
 		return DatabaseService.query(queryFindGroupByIdForPlayerId).then(function(groups){
 
 			if (groups.length == 0){
-				return null;
+				throw new BadRequestError('لم يتم العثور على المجموعة أو أنّك لا تملك صلاحيّة الوصول إليها.');
 			}
 
 			var group = groups[0];
@@ -50,23 +50,17 @@ GroupService = {
 		.then(function(group){
 
 			//
-			if (validator.isNull(group)){
-				return null;
-			}
-
-			//
 			g = group;
 
 			var queryGetGroupPlayers = DatabaseService.format('select players.id, players.fullname, groupPlayers.role, groupPlayers.joinedAt from players, groupPlayers where players.id = groupPlayers.playerId and groupPlayers.groupId = ? and groupPlayers.leftAt is null', [group.id]);
 
 			return DatabaseService.query(queryGetGroupPlayers);
-
 		})
 
 		//
 		.then(function(players){
 
-			// TODO: Check if the players are none.
+			// Check if the players are none.
 			g.players = players;
 			return g;
 
@@ -313,6 +307,21 @@ GroupService = {
 			//
 			var updateGroupPlayerParameters = {role: 'admin'};
 			return GroupPlayerService.updateForId(updateGroupPlayerParameters, groupPlayer.id);
+		});
+	},
+
+	//
+	updateForId: function(parameters, id){
+
+		//
+		parameters.modifiedAt = new Date();
+
+		var queryUpdateGroupById = DatabaseService.format('update groups set ? where id = ?', [parameters, id]);
+		
+		return DatabaseService.query(queryUpdateGroupById)
+
+		.then(function(updateGroupByIdResult){
+			return GroupService.findById(id);
 		});
 	},
 };

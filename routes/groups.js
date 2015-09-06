@@ -26,35 +26,6 @@ router.get('/groups/latest', authenticatable, function(request, response){
 	response.redirect('/api/v1/groups');
 });
 
-// GET /groups/:id
-router.get('/groups/:id', authenticatable, function(request, response){
-
-	if (!validator.isNumeric(request.params.id)){
-		return response.status(400).send({
-			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
-		});
-	}
-
-	var id = request.params.id;
-
-	UserService.findCurrentOrDie(request)
-
-	// Find the given group.
-	.then(function(user){
-		return GroupService.findByIdForPlayerId(id, user.playerId);
-	})
-
-	// Response about it.
-	.then(function(group){
-		return response.send(group);
-	})
-
-	// Catch the error if any.
-	.catch(function(error){
-		return handleApiErrors(error, response);
-	});
-});
-
 // POST /groups
 router.post('/groups', authenticatable, function(request, response){
 
@@ -83,6 +54,78 @@ router.post('/groups', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
+});
+
+// GET /groups/:id
+router.get('/groups/:id', authenticatable, function(request, response){
+
+	if (!validator.isNumeric(request.params.id)){
+		return response.status(400).send({
+			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
+		});
+	}
+
+	var id = request.params.id;
+
+	UserService.findCurrentOrDie(request)
+
+	// Find the given group.
+	.then(function(user){
+		return GroupService.findByIdForPlayerId(id, user.playerId);
+	})
+
+	// Response about it.
+	.then(function(group){
+		return response.send(group);
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+
+});
+
+// PUT /groups/:id
+router.put('/groups/:id', authenticatable, function(request, response){
+
+	if (!validator.isNumeric(request.params.id)){
+		return response.status(400).send({
+			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
+		});
+	}
+
+	if (validator.isNull(request.body.name)){
+		return response.status(400).send({
+			'message': 'الرجء التأكّد من تعبئة الحقول المطلوبة.',
+		});
+	}
+
+	var id = request.params.id;
+	var name = request.body.name;
+
+	UserService.findCurrentOrDie(request)
+
+	// Find the given group.
+	.then(function(user){
+		return GroupService.findByIdForPlayerId(id, user.playerId);
+	})
+
+	// Update the group with the specified parameters.
+	.then(function(group){
+		return GroupService.updateForId({name: name}, id);
+	})
+
+	// Response about it.
+	.then(function(group){
+		return response.send(group);
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+
 });
 
 // GET /groups/:id/leave
