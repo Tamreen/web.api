@@ -52,7 +52,7 @@ TrainingService = {
 	// TODO: The method to be completed.
 	listSpecifiedForPlayerId: function(playerId){
 
-		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?)', [playerId]);
+		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\')', [playerId]);
 
 		return DatabaseService.query(queryListSpecifiedTrainings);
 

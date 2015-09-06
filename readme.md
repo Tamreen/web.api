@@ -10,7 +10,7 @@
 
 ## TODO:
 
-- Make the trainings start and complete.
+- Make the trainings start and complete (Probably by creating a worker).
 - Create a worker to make the activities of all players read if a training completed or canceled.
 
 ## /api/v2

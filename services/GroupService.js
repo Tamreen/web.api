@@ -66,6 +66,7 @@ GroupService = {
 		//
 		.then(function(players){
 
+			// TODO: Check if the players are none.
 			g.players = players;
 			return g;
 
