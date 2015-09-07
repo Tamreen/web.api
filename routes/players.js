@@ -50,7 +50,7 @@ router.get('/players/:id', authenticatable, function(request, response){
 	var id = request.params.id;
 
 	//
-	PlayerService.findById(id)
+	PlayerService.findUserById(id)
 
 	//
 	.then(function(player){
@@ -64,6 +64,6 @@ router.get('/players/:id', authenticatable, function(request, response){
 		//
 		return response.send(player);
 
-	})
-
+	});
 });
+

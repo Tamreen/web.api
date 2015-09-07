@@ -20,6 +20,22 @@ PlayerService = {
 		});
 	},
 
+	findUserById: function(id){
+
+		var queryGetUserPlayerById = DatabaseService.format('select players.*, users.createdAt from players, users where players.id = users.playerId and players.id = ? limit 1', [id]);
+
+		return DatabaseService.query(queryGetUserPlayerById).then(function(players){
+
+			if (players.length == 0){
+				return null;
+			}
+
+			var player = players[0];
+			return player;
+		});
+
+	},
+
 	create: function(parameters){
 
 		var queryInsertPlayer = DatabaseService.format('insert into players set ?', parameters);

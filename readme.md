@@ -12,6 +12,7 @@
 
 - Make the trainings start and complete (Probably by creating a worker).
 - Create a worker to make the activities of all players read if a training completed or canceled.
+- Remove debugging notes later.
 
 ## /api/v2
 - [x] GET /hellos
@@ -199,7 +200,7 @@
 }
 ```
 
-- [ ] POST /groups/:id/players
+- [x] POST /groups/:id/players
 
 > REQUEST
 
