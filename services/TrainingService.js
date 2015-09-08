@@ -20,9 +20,9 @@ TrainingService = {
 
 	//
 	findForPlayerIdById: function(playerId, id){
-
-		var queryGetTraining = DatabaseService.format('select trainings.*, (select count(id) > 0 from trainingActivities where trainingId = trainings.id and type = \'training-allowed-professional\') as professionalable, (select decision from trainingPlayers where trainingId = trainings.id and playerId = tp.playerId) as playerDecision, (select count(groupPlayers.id) > 0 from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = tp.playerId and groups.id = trainings.groupId and users.deletedAt is null and groups.deletedAt is null and groupPlayers.leftAt is null and groupPlayers.role = \'admin\') as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'register-as-subset\') registerAsSubsetPlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'notyet\') as notyetPlayersCount from trainingPlayers tp, trainings where tp.trainingId = trainings.id and tp.playerId = ? and trainings.id = ?', [playerId, id]);
 		
+		var queryGetTraining = DatabaseService.format('select trainings.*, (trainingPlayers.role = \'admin\') as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, trainingPlayers.decision, (select (count(id)/trainings.playersCount)*100 from trainingPlayers where trainingId = trainings.id and decision = \'willcome\') as percentage from trainings, trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.playerId = ? and trainings.id = ?', [playerId, id]);
+
 		return DatabaseService.query(queryGetTraining).then(function(trainings){
 
 			if (trainings.length == 0){
@@ -141,7 +141,6 @@ TrainingService = {
 
 			// Set the sub arrays.
 			t.willcomePlayers = [];
-			t.subsetPlayers = [];
 			t.apologizePlayers = [];
 			t.notyetPlayers = [];
 
@@ -153,10 +152,6 @@ TrainingService = {
 
 				if (player.decision == 'apologize'){
 					return t.apologizePlayers.push(player);
-				}
-
-				if (player.decision == 'register-as-subset'){
-					return t.subsetPlayers.push(player);
 				}
 
 				// Otherwise, the player did not decide.

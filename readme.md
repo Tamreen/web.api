@@ -239,18 +239,194 @@
 }
 ```
 
-- [ ] GET /trainings/:id
+- [x] GET /trainings/:id
 
-> RESPONSE
+> RESPONSE 200
 
 ```json
 {
-	"id": 12, "name": "Related Date Name", "stadium": "Lega",
-	"coordinates": "", "startedAt": "12 Nov 2015", "decision": "willcome",
-	"adminable": true, "status": "gathering", "percentage": 89,
-	"willcomePlayers": [],
-	"apologizePlayers": [],
-	"notyetPlayers": []
+    "id": 15,
+    "name": "الأحد، ٠٥ أبريل ٢٠١٥، ٠٥:٠٠ م",
+    "status": "gathering-completed",
+    "stadium": "في المرمى",
+    "coordinates": null,
+    "startedAt": "2015-04-05T16:00:00.000Z",
+    "playersCount": 16,
+    "professionalized": 0,
+    "publicized": 0,
+    "createdAt": "2015-04-04T12:21:40.000Z",
+    "modifiedAt": "2015-04-05T08:43:35.000Z",
+    "adminable": 0,
+    "willcomePlayersCount": 16,
+    "apologizePlayersCount": 9,
+    "decision": "willcome",
+    "percentage": 100,
+    "willcomePlayers": [
+        {
+            "fullname": "عبدالعزيز الصالح",
+            "id": 20,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "يوسف اليحيى",
+            "id": 25,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "حسام اليحيى",
+            "id": 13,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "عبدالعزيز اليونس",
+            "id": 27,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "محمد الخالد",
+            "id": 18,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "يعقوب السليمان",
+            "id": 12,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "وسام الخالد",
+            "id": 1,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "صالح اليونس",
+            "id": 8,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "حسام الخالد",
+            "id": 28,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "يونس الحسام",
+            "id": 33,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "إبراهيم العبدالرحمن",
+            "id": 9,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "إبراهيم العبدالرحمن",
+            "id": 11,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "خالد الأيمن",
+            "id": 35,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "يونس السليمان",
+            "id": 36,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "إبراهيم اليوسف",
+            "id": 37,
+            "decision": "willcome"
+        },
+        {
+            "fullname": "إبراهيم الفيصل",
+            "id": 17,
+            "decision": "willcome"
+        }
+    ],
+    "apologizePlayers": [
+        {
+            "fullname": "عبدالرحمن الصالح",
+            "id": 15,
+            "decision": "apologize"
+        },
+        {
+            "fullname": "ناصر الحمد",
+            "id": 24,
+            "decision": "apologize"
+        },
+        {
+            "fullname": "حمد الخالد",
+            "id": 38,
+            "decision": "apologize"
+        },
+        {
+            "fullname": "إبراهيم السليمان",
+            "id": 10,
+            "decision": "apologize"
+        },
+        {
+            "fullname": "وائل الوائل",
+            "id": 56,
+            "decision": "apologize"
+        },
+        {
+            "fullname": "خالد الأيمن",
+            "id": 22,
+            "decision": "apologize"
+        },
+        {
+            "fullname": "وائل المحمد",
+            "id": 19,
+            "decision": "apologize"
+        },
+        {
+            "fullname": "عبدالرحمن الأيمن",
+            "id": 34,
+            "decision": "apologize"
+        },
+        {
+            "fullname": "سليمان الحسام",
+            "id": 21,
+            "decision": "apologize"
+        }
+    ],
+    "notyetPlayers": [
+        {
+            "fullname": "حسام المحمد",
+            "id": 14,
+            "decision": "notyet"
+        },
+        {
+            "fullname": "صالح العبدالعزيز",
+            "id": 32,
+            "decision": "notyet"
+        },
+        {
+            "fullname": "محمد الحسام",
+            "id": 29,
+            "decision": "notyet"
+        },
+        {
+            "fullname": "يحيى الناصر",
+            "id": 16,
+            "decision": "notyet"
+        },
+        {
+            "fullname": "حسام اليونس",
+            "id": 43,
+            "decision": "notyet"
+        },
+        {
+            "fullname": "يوسف الحسام",
+            "id": 639,
+            "decision": "notyet"
+        },
+        {
+            "fullname": "يوسف الصالح",
+            "id": 655,
+            "decision": "notyet"
+        }
+    ]
 }
 ```
 
