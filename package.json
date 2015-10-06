@@ -11,7 +11,7 @@
     "google-libphonenumber": "^0.2.2",
     "moment": "^2.9.0",
     "morgan": "*",
-    "mysql": "*",
+    "mysql": "felixge/node-mysql",
     "nconf": "*",
     "node-gcm": "^0.9.14",
     "node-uuid": "*",

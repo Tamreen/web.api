@@ -22,23 +22,26 @@ router.get('/trainings/specified', authenticatable, function(request, response){
 
 });
 
-// GET /trainings/around
-router.get('/trainings/around', authenticatable, function(request, response){
+// PUT /trainings/around
+// TODO: This route must be GET.
+router.put('/trainings/around', authenticatable, function(request, response){
 
-	// TODO: Validate the location, it should be coordinates.
-	// Not sure how the coordinates will be, but basically: [12.4534, 16.2220].
-	if (validator.isNull(request.body.location)){
+	//
+	if (validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.x) || validator.isNull(request.body.coordinates.y)){
 		return response.status(400).send({
-			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
+			'message': 'الرجاء التأكّد من تفعيل الموقع الجغرافيّ الحاليّ.',
 		});
 	}
+
+	//
+	var coordinates = request.body.coordinates;
 
 	//
 	UserService.findCurrentOrDie(request)
 
 	//
 	.then(function(user){
-		return TrainingService.listAroundForPlayerId(user.playerId, {location: location});
+		return TrainingService.listAroundForPlayerId(user.playerId, {coordinates: coordinates});
 	})
 
 	// Response about it.
@@ -53,25 +56,38 @@ router.get('/trainings/around', authenticatable, function(request, response){
 
 });
 
-// POST /groups/:groupId/trainings/add
-router.post('/groups/:groupId/trainings/add', authenticatable, function(request, response){
+// TODO: Trying to complete this method.
+// {
+// 	"stadium": "Lega", "coordinates": {"x": 124, "y": 123}, "startedAt": "12 Nov 2015",
+// 	"groups": [1, 5], "publicized": true, "playersCount": 20
+// }
+
+// POST /trainings
+router.post('/trainings', authenticatable, function(request, response){
 
 	//
 	var u = null;
 
-	//
-	if (!validator.isNumeric(request.params.groupId) || validator.isNull(request.body.stadium) || !validator.isDate(request.body.startedAt) || !validator.isNumeric(request.body.playersCount) || request.body.playersCount <= 0 || !validator.isNumeric(request.body.subsetPlayersCount) || request.body.subsetPlayersCount <= 0){
+	// TODO: Add the coordinates checking when publicized.
+	if (validator.isNull(request.body.stadium) || !validator.isDate(request.body.startedAt) || !validator.isNumeric(request.body.playersCount) || request.body.playersCount <= 0 || validator.isNull(request.body.publicized) || !request.body.groups instanceof Array){
 		return response.status(400).send({
 			'message': 'الرجاء التأكّد من تعبئة الحقول المطلوبة.',
 		});
 	}
 
+	if (request.body.publicized == 1 && (validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.x) || validator.isNull(request.body.coordinates.y))){
+		return response.status(400).send({
+			'message': 'الرجاء تحديد موقع الملعب الجغرافيّ.',
+		});
+	}
+
 	//
-	var groupId = request.params.groupId;
 	var stadium = request.body.stadium;
 	var startedAt = validator.toDate(request.body.startedAt);
 	var playersCount = request.body.playersCount;
-	var subsetPlayersCount = request.body.subsetPlayersCount;
+	var publicized = request.body.publicized;
+	var groups = request.body.groups;
+	var coordinates = request.body.coordinates;
 
 	//
 	UserService.findCurrentOrDie(request)
@@ -79,12 +95,12 @@ router.post('/groups/:groupId/trainings/add', authenticatable, function(request,
 	//
 	.then(function(user){
 		u = user;
-		return GroupService.checkIsPlayerIdAdminForIdOrDie(u.playerId, groupId);
+		return GroupService.checkIsPlayerIdAdminForIdsOrDie(u.playerId, groups);
 	})
 
 	//
-	.then(function(groupPlayer){
-		return TrainingService.create({groupId: groupPlayer.groupId, status: 'gathering', stadium: stadium, startedAt: startedAt, playersCount: playersCount, subsetPlayersCount: subsetPlayersCount, authorId: u.playerId});
+	.then(function(groupPlayers){
+		return TrainingService.create({groups: groups, status: 'gathering', stadium: stadium, coordinates: coordinates, startedAt: startedAt, playersCount: playersCount, publicized: publicized, authorId: u.playerId});
 	})
 
 	// Response about it.
@@ -96,6 +112,7 @@ router.post('/groups/:groupId/trainings/add', authenticatable, function(request,
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
+
 });
 
 // GET /trainings/:id

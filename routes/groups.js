@@ -20,12 +20,6 @@ router.get('/groups', authenticatable, function(request, response){
 	});
 });
 
-// GET /groups/latest
-// TODO: Consider deleting the route.
-router.get('/groups/latest', authenticatable, function(request, response){
-	response.redirect('/api/v1/groups');
-});
-
 // POST /groups
 router.post('/groups', authenticatable, function(request, response){
 
@@ -187,12 +181,6 @@ router.get('/groups/:id/delete', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-});
-
-// TODO: Consider deleting the route.
-// GET /groups/:groupId/players/latest
-router.get('/groups/:groupId/players/latest', authenticatable, function(request, response){
-	response.redirect('/api/v1/groups/' + request.params.groupId + '/players');
 });
 
 // POST /groups/:id/players

@@ -130,7 +130,7 @@
 ]
 ```
 
-- [ ] GET /trainings/[specified|around]
+- [x] GET /trainings/[specified|around]
 
 > REQUEST
 
@@ -227,11 +227,11 @@
 
 ```json
 {
-	"stadium": "Lega", "coordinates": "", "startedAt": "12 Nov 2015",
-	"groups": [1, 5], "publicable": true, "playersCount": 20
+	"stadium": "Lega", "coordinates": [x: 124, y: 123], "startedAt": "12 Nov 2015",
+	"groups": [1, 5], "publicized": true, "playersCount": 20
 }
 ```
-> RESPONSE
+> RESPONSE 201
 
 ```json
 {

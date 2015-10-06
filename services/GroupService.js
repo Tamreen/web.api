@@ -135,10 +135,10 @@ GroupService = {
 		});
 	},
 
-	//
-	listPlayersByIdForPlayerId: function(id, playerId){
+	// TODO: This method actually returns the repeated players too.
+	listPlayersByIdsForPlayerId: function(ids, playerId){
 
-		var queryListPlayersForGroupIdAndPlayerId = DatabaseService.format('select players.id, players.fullname, groupPlayers.role, groupPlayers.joinedAt from groupPlayers, players where groupPlayers.playerId = players.id and groupPlayers.leftAt is null and groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null)', [playerId, id]);
+		var queryListPlayersForGroupIdAndPlayerId = DatabaseService.format('select players.id, players.fullname, groupPlayers.role, groupPlayers.joinedAt from groupPlayers, players where groupPlayers.playerId = players.id and groupPlayers.leftAt is null and groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id in (?) and groupPlayers.leftAt is null and groups.deletedAt is null)', [playerId, ids]);
 
 		return DatabaseService.query(queryListPlayersForGroupIdAndPlayerId);
 	},
@@ -241,25 +241,33 @@ GroupService = {
 		});
 	},
 
-	checkIsPlayerIdAdminForIdOrDie: function(playerId, id){
+	//
+	checkIsPlayerIdAdminForIdsOrDie: function(playerId, ids){
 
 		return new Promise(function(resolve, reject){
 
-			// Check if the user is admin.
-			var queryGetGroupPlayer = DatabaseService.format('select groupPlayers.* from groupPlayers, groups where groupPlayers.groupId = groups.id and groupPlayers.playerId = ? and groups.id = ? and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [playerId, id])
+			// Check if the player is an admin for all group ids.
+
+			if (ids.length == 0){
+				return reject(new BadRequestError('Please specify the groups to be searched for.'));
+			}
+
+
+			// // Check if the user is admin.
+			var queryGetGroupsPlayer = DatabaseService.format('select groupPlayers.* from groupPlayers, groups where groupPlayers.playerId = ? and groupPlayers.groupId in (?) and groups.id = groupPlayers.groupId and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [playerId, ids])
 
 			//
-			DatabaseService.query(queryGetGroupPlayer)
+			DatabaseService.query(queryGetGroupsPlayer)
 
 			//
 			.then(function(groupPlayers){
 
-				if (groupPlayers.length == 0){
-					return reject(new UnauthorizedError('لا يُمكنك الوصول إلى هذه الواجهة، ربما لكونك لست مديرًا.'));
+				if (groupPlayers.length != ids.length){
+					return reject(new UnauthorizedError('You cannot reach these groups, you are not admin for them.'));
 				}
 
-				var groupPlayer = groupPlayers[0];
-				return resolve(groupPlayer);
+				//
+				return resolve(groupPlayers);
 			});
 		});
 	},

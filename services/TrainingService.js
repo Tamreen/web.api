@@ -35,11 +35,13 @@ TrainingService = {
 	},
 
 	//
-	addGroupIdPlayersForPlayerIdToId: function(groupId, playerId, id){
+	addGroupIdsPlayersForPlayerIdToId: function(groups, playerId, id){
 
-		return GroupService.listPlayersByIdForPlayerId(groupId, playerId)
+		return GroupService.listPlayersByIdsForPlayerId(groups, playerId)
 
 		.then(function(players){
+
+			console.log('Number of players', players.length);
 
 			return Promise.each(players, function(player){
 
@@ -62,9 +64,9 @@ TrainingService = {
 	// TODO: The method to be completed.
 	listAroundForPlayerId: function(playerId, parameters){
 
-		var queryListAroundTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and st_distance(coordinates, ?) as distance order by distance asc', [parameters.coordinates]);
+		var queryListAroundTrainings = DatabaseService.format('select *, st_distance(coordinates, point(?,?)) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and st_distance(coordinates, point(?,?)) is not null', [parameters.coordinates.x, parameters.coordinates.y, playerId, parameters.coordinates.x, parameters.coordinates.y]);
 
-		return DatabaseService.query(queryListSpecifiedTrainings);
+		return DatabaseService.query(queryListAroundTrainings);
 	},
 
 	//
@@ -73,6 +75,8 @@ TrainingService = {
 		//
 		var id = null;
 		var authorId = parameters.authorId;
+		var groups = parameters.groups;
+		var coordinates = null;
 
 		//
 		parameters.name = moment(parameters.startedAt).format('dddd، DD MMMM YYYY، hh:mm a');
@@ -80,9 +84,24 @@ TrainingService = {
 
 		//
 		delete parameters.authorId;
+		delete parameters.groups;
+
+		//
+		if (!validator.isNull(parameters.coordinates)){
+			coordinates = parameters.coordinates;
+			delete parameters.coordinates;
+		}
 
 		//
 		var queryInsertTraining = DatabaseService.format('insert into trainings set ?', parameters);
+
+		//
+		if (!validator.isNull(coordinates)){
+			queryInsertTraining = queryInsertTraining + ', coordinates = geomfromtext(?)';
+			queryInsertTraining = DatabaseService.format(queryInsertTraining, 'point(' + coordinates.x + ' ' + coordinates.y + ')');
+		}
+
+		console.log(queryInsertTraining);
 
 		//
 		return DatabaseService.query(queryInsertTraining)
@@ -94,7 +113,7 @@ TrainingService = {
 			id = insertTrainingResult.insertId;
 
 			//
-			return TrainingService.addGroupIdPlayersForPlayerIdToId(parameters.groupId, authorId, id)
+			return TrainingService.addGroupIdsPlayersForPlayerIdToId(groups, authorId, id)
 		})
 
 		//

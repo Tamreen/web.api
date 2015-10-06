@@ -72,6 +72,8 @@ TrainingActivityService = {
 		// Create/Find the recipients to/in activityPlayers table.
 		.then(function(recipients){
 
+			console.log(recipients.length);
+
 			// Slice.
 			ar = recipients.slice();
 

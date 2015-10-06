@@ -28,3 +28,18 @@ require('../server');
 
 // });
 
+// GroupService.checkIsPlayerIdAdminForIdsOrDie(1, [6, 104])
+
+// .then(function(result){
+
+// 	//
+// 	console.log('Result is reached', result);
+
+// });
+
+GroupService.listPlayersByIdsForPlayerId([6, 104], 1)
+
+//
+.then(function(players){
+	console.log('Number of players', players.length);
+});
