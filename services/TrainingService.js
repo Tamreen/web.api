@@ -55,18 +55,20 @@ TrainingService = {
 	},
 
 	// TODO: What about canceled trainings, it would show forever.
+	// TODO: Or as a solution we could order them by latest.
 	listSpecifiedForPlayerId: function(playerId){
 
-		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\')', [playerId]);
+		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\')', [playerId]);
 
 		return DatabaseService.query(queryListSpecifiedTrainings);
 
 	},
 
 	// TODO: The method to be completed.
+	// TODO: Or as a solution we could order them by latest.
 	listAroundForPlayerId: function(playerId, parameters){
 
-		var queryListAroundTrainings = DatabaseService.format('select *, st_distance(coordinates, point(?,?)) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select id from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and st_distance(coordinates, point(?,?)) is not null', [parameters.coordinates.x, parameters.coordinates.y, playerId, parameters.coordinates.x, parameters.coordinates.y]);
+		var queryListAroundTrainings = DatabaseService.format('select *, st_distance(coordinates, point(?,?)) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and st_distance(coordinates, point(?,?)) is not null', [parameters.coordinates.x, parameters.coordinates.y, playerId, parameters.coordinates.x, parameters.coordinates.y]);
 
 		return DatabaseService.query(queryListAroundTrainings);
 	},

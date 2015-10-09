@@ -130,7 +130,44 @@
 ]
 ```
 
-- [x] GET /trainings/[specified|around]
+- [x] GET /trainings/specified
+
+> RESPONSE
+
+```json
+[
+    {
+        "id": 15,
+        "name": "الأحد، ٠٥ أبريل ٢٠١٥، ٠٥:٠٠ م",
+        "status": "gathering-completed",
+        "stadium": "في المرمى",
+        "coordinates": null,
+        "startedAt": "2015-04-05T14:00:00.000Z",
+        "playersCount": 16,
+        "professionalized": 0,
+        "publicized": 0,
+        "createdAt": "2015-04-04T10:21:40.000Z",
+        "modifiedAt": "2015-04-05T06:43:35.000Z",
+        "percentage": 100
+    },
+    {
+        "id": 21,
+        "name": "الأحد، ١٢ أبريل ٢٠١٥، ٠٥:٠٠ م",
+        "status": "gathering-completed",
+        "stadium": "في المرمى",
+        "coordinates": null,
+        "startedAt": "2015-04-12T14:00:00.000Z",
+        "playersCount": 18,
+        "professionalized": 0,
+        "publicized": 0,
+        "createdAt": "2015-04-11T10:22:01.000Z",
+        "modifiedAt": "2015-04-12T10:24:28.000Z",
+        "percentage": 100
+    }
+]
+```
+
+- [ ] GET /trainings/around
 
 > REQUEST
 
@@ -472,7 +509,7 @@ TODO: The checking of a near by place is important.
 
 > RESPONSE 204
 
-- [ ] PUT /trainings/:id
+- [ ] PUT /trainings/§:id
 
 > REQUEST 
 

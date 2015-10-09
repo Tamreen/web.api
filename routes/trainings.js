@@ -22,9 +22,8 @@ router.get('/trainings/specified', authenticatable, function(request, response){
 
 });
 
-// PUT /trainings/around
-// TODO: This route must be GET.
-router.put('/trainings/around', authenticatable, function(request, response){
+// GET /trainings/around
+router.get('/trainings/around', authenticatable, function(request, response){
 
 	//
 	if (validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.x) || validator.isNull(request.body.coordinates.y)){
