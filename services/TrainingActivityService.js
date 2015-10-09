@@ -115,7 +115,7 @@ TrainingActivityService = {
 
 		switch (trainingActivity.type){
 
-			case 'training-started':
+			case 'training-gathering-started':
 				trainingActivity.icon = '😀';
 				trainingActivity.content = 'بدأ التحضير للتمرين';
 			break;
@@ -125,29 +125,31 @@ TrainingActivityService = {
 				trainingActivity.content = trainingActivity.authorFullname + ' قرّر أن يحضر';
 			break;
 
-			case 'player-registered-as-subset':
-				trainingActivity.icon = '😁';
-				trainingActivity.content = trainingActivity.authorFullname + ' سجّل كاحتياط';
-			break;
-
 			case 'player-apologized':
 			trainingActivity.icon = '😐';
 				trainingActivity.content = trainingActivity.authorFullname + ' اعتذر عن الحضور';
 			break;
 
-			case 'training-completed':
+			case 'training-gathering-completed':
 				trainingActivity.icon = '😎';
 				trainingActivity.content = 'اكتمل التحضير للتمرين';
 			break;
 
-			case 'training-canceled':
-				trainingActivity.icon = '😡';
-				trainingActivity.content = 'أُلغي التمرين';
-			break;
-
-			case 'training-not-completed':
+			case 'training-gathering-not-completed':
 				trainingActivity.icon = '😰';
 				trainingActivity.content = 'تحضير التمرين غير مُكتمل';
+			break;
+
+			// TODO:
+			case 'training-poked':
+				trainingActivity.icon = '😤';
+				trainingActivity.content = 'يالله شباب';
+			break;
+
+			// TODO:
+			case 'training-professionalized':
+				trainingActivity.icon = '😏';
+				trainingActivity.content = 'فُتح الباب لجلب المحترفين';
 			break;
 
 			case 'player-brought-professional':
@@ -155,9 +157,27 @@ TrainingActivityService = {
 				trainingActivity.content = trainingActivity.authorFullname + ' جلب محترفًا';
 			break;
 
-			case 'training-allowed-professional':
-				trainingActivity.icon = '😏';
-				trainingActivity.content = 'فُتح الباب لجلب المحترفين';
+			// TODO:
+			case 'training-publicized':
+				trainingActivity.icon = '😘';
+				trainingActivity.content = 'فُتح الباب للعموم';
+			break;
+
+			case 'training-canceled':
+				trainingActivity.icon = '😡';
+				trainingActivity.content = 'أُلغي التمرين';
+			break;
+
+			// TODO:
+			case 'training-started':
+				trainingActivity.icon = '⚽️';
+				trainingActivity.content = 'بدأ التمرين';
+			break;
+
+			// TODO:
+			case 'training-completed':
+				trainingActivity.icon = '🏆';
+				trainingActivity.content = 'انتهى التمرين';
 			break;
 		}
 

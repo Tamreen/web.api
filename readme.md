@@ -464,11 +464,11 @@ TODO: The checking of a near by place is important.
 }
 ```
 
-- [ ] PUT /trainings/:id/willcome
+- [x] PUT /trainings/:id/willcome
 
 > RESPONSE 204
 
-- [ ] PUT /trainings/:id/apologize
+- [x] PUT /trainings/:id/apologize
 
 > RESPONSE 204
 

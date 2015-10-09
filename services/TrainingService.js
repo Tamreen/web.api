@@ -167,11 +167,15 @@ TrainingService = {
 
 			return Promise.each(players, function(player){
 
-				if (player.decision == 'willcome'){
+				var decision = player.decision;
+
+				delete player.decision;
+
+				if (decision == 'willcome'){
 					return t.willcomePlayers.push(player);
 				}
 
-				if (player.decision == 'apologize'){
+				if (decision == 'apologize'){
 					return t.apologizePlayers.push(player);
 				}
 
@@ -257,7 +261,7 @@ TrainingService = {
 			}
 
 			// Check if the player id has decided.
-			if (training.playerDecision == 'willcome'){
+			if (training.decision == 'willcome'){
 				throw new BadRequestError('اللاعب قد قرّر مُسبقًا.');
 			}
 
@@ -277,16 +281,11 @@ TrainingService = {
 		// Get the training by id.
 		return TrainingService.findBestIdForPlayerIdOrDie(id, playerId)
 
-		// TODO: Decide for the player to come.
-		// TODO: Update the player decision.
-		// TODO: Check if the training is completed.
-
-		//
+		// Decide for the player to come.
 		.then(function(training){
 
 			//
 			t = training;
-
 			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'player-decided-to-come'});
 
 		})
@@ -296,32 +295,22 @@ TrainingService = {
 
 			//
 			ta = activity;
-
-			if (ta.type == 'player-decided-to-come'){
-				return TrainingPlayerService.updateDecisionByTrainingIdAndPlayerId('willcome', t.id, playerId);
-			}
-
-			if (ta.type == 'player-registered-as-subset'){
-				return TrainingPlayerService.updateDecisionByTrainingIdAndPlayerId('register-as-subset', t.id, playerId);
-			}
+			return TrainingPlayerService.updateDecisionByTrainingIdAndPlayerId('willcome', t.id, playerId);
 		})
 
-		// Check if the training now is completed.
+		// Check if the training is completed.
 		.then(function(){
 
-			if (ta.type == 'player-decided-to-come'){
+			// If the training is completed, create activity and notify the players.
+			if (t.playersCount == t.willcomePlayersCount + 1){
 
-				// If the training is completed, create activity and notify the players.
-				if (t.playersCount == t.willcomePlayersCount + 1){
+				// Complete the training.
+				TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-gathering-completed'})
 
-					// Complete the training.
-					TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-completed'})
-
-					//
-					.then(function(completedActivity){
-						return TrainingService.updateForId({status: 'completed'}, t.id);
-					});
-				}
+				//
+				.then(function(completedActivity){
+					return TrainingService.updateForId({status: 'gathering-completed'}, t.id);
+				});
 			}
 
 			// Just to assure that the promise has been fullfilled.
@@ -351,21 +340,14 @@ TrainingService = {
 			t = training;
 
 			// Check if the training is already canceled.
-			if (t.status == 'canceled'){
-				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
-			}
-
-			// Check if the attending time for the training has ended.
-			if (new Date() > t.startedAt){
-				throw new BadRequestError('التمرين قد انتهى مُسبقًا.');
+			if (t.status == 'canceled' || t.status == 'started' || t.status == 'completed'){
+				throw new BadRequestError('Cannot apologize for now.');
 			}
 
 			// Check if the player id has decided.
-			if (t.playerDecision == 'apologize'){
+			if (t.decision == 'apologize'){
 				throw new BadRequestError('اللاعب قد قرّر مُسبقًا.');
 			}
-
-			// TODO: If it is too late then it is too late.
 
 			//
 			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'player-apologized'});
@@ -384,50 +366,20 @@ TrainingService = {
 		//
 		.then(function(){
 
-			if (t.playerDecision == 'willcome' && t.status == 'completed'){
+			if (t.decision == 'willcome' && t.status == 'gathering-completed'){
 
 				// Update the status of the training to be 'gathering'.
 				TrainingService.updateForId({status: 'gathering'}, t.id)
 
-				// Add an activity saying that the training is not completed w/ notifying players.
+				// Add an activity saying that the training is not completed with notifying players.
 				.then(function(){
-					return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-not-completed'});
-				})
-
-				// Subset the best player if any.
-				.then(function(activity){
-					return TrainingService.subsetBestPlayerForId(t.id);
+					return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-gathering-not-completed'});
 				});
 			}
 
 			// Just to assure that the promise has been fullfilled.
 			return true;
 		})
-	},
-
-	//
-	subsetBestPlayerForId: function(id){
-
-		//
-		var queryGetTrainingSubsetPlayers = DatabaseService.format('select * from trainingPlayers where trainingId = ? and decision = \'register-as-subset\' order by coalesce(modifiedAt, createdAt)', [id]);
-
-		//
-		return DatabaseService.query(queryGetTrainingSubsetPlayers)
-
-		//
-		.then(function(subsetPlayers){
-
-			// No subset players have been found.
-			if (subsetPlayers.length == 0){
-				return true;
-			}
-
-			//
-			var subsetPlayer = subsetPlayers[0];
-
-			//
-			return TrainingService.decideForPlayerIdToComeToId(subsetPlayer.playerId, id, true, false);
-		});
 	},
 
 	//

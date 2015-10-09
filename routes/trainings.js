@@ -56,12 +56,6 @@ router.put('/trainings/around', authenticatable, function(request, response){
 
 });
 
-// TODO: Trying to complete this method.
-// {
-// 	"stadium": "Lega", "coordinates": {"x": 124, "y": 123}, "startedAt": "12 Nov 2015",
-// 	"groups": [1, 5], "publicized": true, "playersCount": 20
-// }
-
 // POST /trainings
 router.post('/trainings', authenticatable, function(request, response){
 
@@ -146,8 +140,8 @@ router.get('/trainings/:id', authenticatable, function(request, response){
 	});
 });
 
-// GET /trainings/:id/willcome
-router.get('/trainings/:id/willcome', authenticatable, function(request, response){
+// PUT /trainings/:id/willcome
+router.put('/trainings/:id/willcome', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
 		return response.status(400).send({
@@ -177,8 +171,8 @@ router.get('/trainings/:id/willcome', authenticatable, function(request, respons
 	});
 });
 
-// GET /trainings/:id/apologize
-router.get('/trainings/:id/apologize', authenticatable, function(request, response){
+// PUT /trainings/:id/apologize
+router.put('/trainings/:id/apologize', authenticatable, function(request, response){
 
 	//
 	if (!validator.isNumeric(request.params.id)){

@@ -18,13 +18,13 @@ require('../server');
 
 // });
 
-// TrainingService.findForPlayerIdById(5, 1)
+TrainingService.findForPlayerIdById(1, 177)
 
-// .then(function(training){
+.then(function(training){
 
-// 	console.log(training);
+	console.log(training);
 
-// });
+});
 
 // TrainingService.detailsByPlayerIdAndId(65, 19)
 
@@ -34,10 +34,10 @@ require('../server');
 
 // });
 
-TrainingService.create({groups: [6, 104], status: 'gathering', stadium: 'Riyadh', coordinates: {x: 124.5, y: 56.4}, startedAt: new Date(), playersCount: 20, publicized: 0, authorId: 1})
+// TrainingService.create({groups: [6, 104], status: 'gathering', stadium: 'Riyadh', coordinates: {x: 124.5, y: 56.4}, startedAt: new Date(), playersCount: 20, publicized: 0, authorId: 1})
 
-.then(function(training){
+// .then(function(training){
 
-	console.log(training);
+// 	console.log(training);
 
-});
+// });
