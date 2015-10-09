@@ -85,13 +85,13 @@ router.put('/groups/:id', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
 		return response.status(400).send({
-			'message': 'الرجء التأكّد من اختيار مجموعة صحيحة.',
+			'message': 'الرجاء التأكّد من اختيار مجموعة صحيحة.',
 		});
 	}
 
 	if (validator.isNull(request.body.name)){
 		return response.status(400).send({
-			'message': 'الرجء التأكّد من تعبئة الحقول المطلوبة.',
+			'message': 'الرجاء التأكّد من تعبئة الحقول المطلوبة.',
 		});
 	}
 
@@ -202,8 +202,7 @@ router.post('/groups/:id/players', authenticatable, function(request, response){
 
 	//
 	.then(function(user){
-		console.log('GroupService.checkIsPlayerIdAdminForIdOrDie is about to be called.');
-		return GroupService.checkIsPlayerIdAdminForIdOrDie(user.playerId, id);
+		return GroupService.checkIsPlayerIdAdminForIdsOrDie(user.playerId, [id]);
 	})
 
 	//

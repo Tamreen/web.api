@@ -163,7 +163,7 @@ router.get('/trainings/:id/willcome', authenticatable, function(request, respons
 
 	//
 	.then(function(user){
-		return TrainingService.decideForPlayerIdToComeToId(user.playerId, id, false, false);
+		return TrainingService.decideForPlayerIdToComeToId(user.playerId, id);
 	})
 
 	// Response about it.

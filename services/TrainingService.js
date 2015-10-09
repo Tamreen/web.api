@@ -45,7 +45,9 @@ TrainingService = {
 
 			return Promise.each(players, function(player){
 
-				return TrainingPlayerService.findOrCreate({trainingId: id, playerId: player.id, decision: 'notyet'});
+				console.log(player.role);
+
+				return TrainingPlayerService.findOrCreate({trainingId: id, playerId: player.id, decision: 'notyet', role: player.role});
 
 			});
 
@@ -120,7 +122,7 @@ TrainingService = {
 		.then(function(){
 
 			//
-			TrainingActivityService.create({trainingId: id, authorId: authorId, type: 'training-started'});
+			TrainingActivityService.create({trainingId: id, authorId: authorId, type: 'training-gathering-started'});
 
 			// Find the training by id.
 			return TrainingService.findForPlayerIdById(authorId, id);
@@ -236,7 +238,7 @@ TrainingService = {
 	},
 
 	//
-	findBestIdForPlayerIdOrDie: function(playerId, id, isSubset, isProfessional){
+	findBestIdForPlayerIdOrDie: function(id, playerId){
 
 		// Get the training by id.
 		return TrainingService.findForPlayerIdById(playerId, id)
@@ -245,46 +247,39 @@ TrainingService = {
 		.then(function(training){
 
 			// Check if the training is valid.
-			if (!training){
+			if (validator.isNull(training)){
 				throw new BadRequestError('لا يُمكن العثور على التمرين.');
 			}
 
-			// Check if the training is already canceled.
-			if (training.status == 'canceled'){
-				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
-			}
-
-			// Check if the attending time for the training has ended.
-			if (new Date() > training.startedAt){
-				throw new BadRequestError('التمرين قد انتهى مُسبقًا.');
+			// Check if the training is not gathering.
+			if (training.status != 'gathering'){
+				throw new BadRequestError('The training is not gathering.');
 			}
 
 			// Check if the player id has decided.
-			if (training.playerDecision == 'willcome' || (training.playerDecision == 'register-as-subset' && isSubset == false)){
+			if (training.playerDecision == 'willcome'){
 				throw new BadRequestError('اللاعب قد قرّر مُسبقًا.');
-			}
-
-			// Check if the training is already completed.
-			if (training.playersCount == training.willcomePlayersCount && (training.subsetPlayersCount == training.registerAsSubsetPlayersCount || isProfessional == true)){
-				throw new BadRequestError('التمرين قد اكتمل مُسبقًا.');
 			}
 
 			//
 			return training;
 
 		});
-
 	},
 
 	//
-	decideForPlayerIdToComeToId: function(playerId, id, isSubset, isProfessional){
+	decideForPlayerIdToComeToId: function(playerId, id){
 
 		//
 		var t = null;
 		var ta = null;
 
 		// Get the training by id.
-		return TrainingService.findBestIdForPlayerIdOrDie(playerId, id, isSubset, isProfessional)
+		return TrainingService.findBestIdForPlayerIdOrDie(id, playerId)
+
+		// TODO: Decide for the player to come.
+		// TODO: Update the player decision.
+		// TODO: Check if the training is completed.
 
 		//
 		.then(function(training){
@@ -292,15 +287,7 @@ TrainingService = {
 			//
 			t = training;
 
-			// Check if there is enough space for attending as a major player.
-			if (t.playersCount > t.willcomePlayersCount){
-				return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'player-decided-to-come'});
-			}
-
-			// Check if there is no enough space for that.
-			if (t.subsetPlayersCount > t.registerAsSubsetPlayersCount){
-				return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'player-registered-as-subset'});
-			}
+			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'player-decided-to-come'});
 
 		})
 

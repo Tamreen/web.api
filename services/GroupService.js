@@ -21,7 +21,7 @@ GroupService = {
 	//
 	listForPlayerId: function(playerId){
 
-		var queryListGroupsForPlayerId = DatabaseService.format('select groups.id, groups.name, count(groupPlayers.id) as playersCount, groups.createdAt from (select * from groupPlayers where playerId = 1 and leftAt is null group by groupId) as playerGroups, groups, groupPlayers where playerGroups.groupId = groups.id and groupPlayers.groupId = groups.id and groups.deletedAt is null and groupPlayers.leftAt is null group by groups.id', [playerId]);
+		var queryListGroupsForPlayerId = DatabaseService.format('select groups.id, groups.name, count(groupPlayers.id) as playersCount, groups.createdAt from (select * from groupPlayers where playerId = ? and leftAt is null group by groupId) as playerGroups, groups, groupPlayers where playerGroups.groupId = groups.id and groupPlayers.groupId = groups.id and groups.deletedAt is null and groupPlayers.leftAt is null group by groups.id', [playerId]);
 
 		return DatabaseService.query(queryListGroupsForPlayerId);
 	},
@@ -135,10 +135,10 @@ GroupService = {
 		});
 	},
 
-	// TODO: This method actually returns the repeated players too.
+	//
 	listPlayersByIdsForPlayerId: function(ids, playerId){
 
-		var queryListPlayersForGroupIdAndPlayerId = DatabaseService.format('select players.id, players.fullname, groupPlayers.role, groupPlayers.joinedAt from groupPlayers, players where groupPlayers.playerId = players.id and groupPlayers.leftAt is null and groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id in (?) and groupPlayers.leftAt is null and groups.deletedAt is null)', [playerId, ids]);
+		var queryListPlayersForGroupIdAndPlayerId = DatabaseService.format('select players.id, players.fullname, groupPlayers.role, groupPlayers.joinedAt from groupPlayers, players where groupPlayers.playerId = players.id and groupPlayers.leftAt is null and groupId in (select groups.id from groupPlayers, users, groups where groupPlayers.playerId = users.playerId and groupPlayers.groupId = groups.id and users.playerId = ? and groups.id in (?) and groupPlayers.leftAt is null and groups.deletedAt is null) group by players.id order by role desc', [playerId, ids]);
 
 		return DatabaseService.query(queryListPlayersForGroupIdAndPlayerId);
 	},
@@ -253,7 +253,7 @@ GroupService = {
 			}
 
 
-			// // Check if the user is admin.
+			// Check if the user is admin.
 			var queryGetGroupsPlayer = DatabaseService.format('select groupPlayers.* from groupPlayers, groups where groupPlayers.playerId = ? and groupPlayers.groupId in (?) and groups.id = groupPlayers.groupId and groupPlayers.leftAt is null and groups.deletedAt is null and groupPlayers.role = \'admin\'', [playerId, ids])
 
 			//

@@ -10,7 +10,7 @@
 
 ## TODO:
 
-- Make the trainings start and complete (Probably by creating a worker).
+- Make the trainings start and complete (probably by creating a worker).
 - Create a worker to make the activities of all players read if a training completed or canceled.
 - Remove debugging notes later.
 
@@ -196,7 +196,12 @@
 
 ```json
 {
-	# TODO: The response must be a group (maybe with the players).
+    "id": 6,
+    "name": "Hello World",
+    "authorId": 1,
+    "createdAt": "2015-03-29T00:29:27.000Z",
+    "modifiedAt": "2015-10-08T19:25:09.000Z",
+    "deletedAt": null
 }
 ```
 
@@ -206,14 +211,19 @@
 
 ```json
 {
-	"fullname": "Ali Khalid", "e164formattedMobileNumber": "+96655*******"
+    "fullname": "Hello World",
+    "e164formattedMobileNumber": "+966*******"
 }
 ```
 > RESPONSE 201
 
 ```json
 {
-	# TODO: The response must be a player.
+    "id": 1010,
+    "fullname": "Hello World",
+    "modifiedAt": null,
+    "joinedAt": "2015-10-08T19:33:43.000Z",
+    "role": "member"
 }
 ```
 
@@ -221,21 +231,45 @@
 
 > RESPONSE 204
 
-- [ ] POST /trainings
+- [x] POST /trainings
+
+TODO: The checking of a near by place is important.
 
 > REQUEST
 
 ```json
 {
-	"stadium": "Lega", "coordinates": [x: 124, y: 123], "startedAt": "12 Nov 2015",
-	"groups": [1, 5], "publicized": true, "playersCount": 20
+    "stadium": "Riyadh",
+    "startedAt": "12 Nov 2014 11:11:33",
+    "playersCount": 12,
+    "publicized": 1,
+    "coordinates": {"x": 124.66, "y": 76.89},
+    "groups": [6, 104]
 }
 ```
 > RESPONSE 201
 
 ```json
 {
-	# TODO: The response must be a training.
+    "id": 177,
+    "name": "الأربعاء، ١٢ نوفمبر ٢٠١٤، ١١:١١ ص",
+    "status": "gathering",
+    "stadium": "Riyadh",
+    "coordinates": {
+        "x": 124.66,
+        "y": 76.89
+    },
+    "startedAt": "2014-11-12T08:11:33.000Z",
+    "playersCount": 12,
+    "professionalized": 0,
+    "publicized": 1,
+    "createdAt": "2015-10-08T19:21:34.000Z",
+    "modifiedAt": null,
+    "adminable": 1,
+    "willcomePlayersCount": 0,
+    "apologizePlayersCount": 0,
+    "decision": "notyet",
+    "percentage": 0
 }
 ```
 
