@@ -248,6 +248,13 @@ router.put('/trainings/:id', authenticatable, function(request, response){
 
 });
 
+// TODO: PUT /trainings/:id/professionalize
+// TODO: PUT /trainings/:id/publicize
+// TODO: PUT /trainings/:id/poke
+// TODO: PUT /trainings/:id/cancel
+// TODO: PUT /trainings/:id/players/:playerId/willcome
+// TODO: PUT /trainings/:id/players/:playerId/apologize
+
 // POST /trainings/:id/professionals/bring
 router.post('/trainings/:id/professionals/bring', authenticatable, function(request, response){
 

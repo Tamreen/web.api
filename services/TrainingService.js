@@ -25,6 +25,7 @@ TrainingService = {
 
 		return DatabaseService.query(queryGetTraining).then(function(trainings){
 
+			// TODO: Check if the training is public, then, there is no need.
 			if (trainings.length == 0){
 				return null;
 			}
@@ -282,33 +283,35 @@ TrainingService = {
 	},
 
 	//
-	findBestIdForPlayerIdOrDie: function(id, playerId){
+	checkIsIdOkayOrDie: function(id){
 
-		// Get the training by id.
-		return TrainingService.findForPlayerIdById(playerId, id)
+		return TrainingService.findById(id)
 
 		//
 		.then(function(training){
 
 			// Check if the training is valid.
 			if (validator.isNull(training)){
-				throw new BadRequestError('لا يُمكن العثور على التمرين.');
+				throw new BadRequestError('checkIsIdOkayOrDie: Cannot find the training.');
 			}
 
-			// Check if the training is not gathering.
-			if (training.status != 'gathering'){
-				throw new BadRequestError('The training is not gathering.');
+			// Check if the training is not okay.
+			if (training.status == 'canceled' || training.status == 'started' || training.status == 'completed'){
+				throw new BadRequestError('Cannot take decision for now.');
 			}
 
-			// Check if the player id has decided.
-			if (training.decision == 'willcome'){
-				throw new BadRequestError('اللاعب قد قرّر مُسبقًا.');
-			}
-
-			//
 			return training;
-
 		});
+	},
+
+	//
+	introducePlayerIdIfIdIsPublicized: function(playerId, id, publicized){
+
+		if (publicized == 1){
+			return TrainingPlayerService.findOrCreate({trainingId: id, playerId: playerId});
+		}
+
+		return true;
 	},
 
 	//
@@ -318,14 +321,31 @@ TrainingService = {
 		var t = null;
 		var ta = null;
 
+		//
+		return TrainingService.checkIsIdOkayOrDie(id)
+
+		//
+		.then(function(training){
+			return TrainingService.introducePlayerIdIfIdIsPublicized(playerId, id, training.publicized);
+		})
+
 		// Get the training by id.
-		return TrainingService.findBestIdForPlayerIdOrDie(id, playerId)
+		.then(function(){
+			return TrainingService.findForPlayerIdById(playerId, id)
+		})
 
 		// Decide for the player to come.
 		.then(function(training){
 
 			//
 			t = training;
+
+			// Check if the training is not gathering or the player has decided.
+			if (t.status != 'gathering' || t.decision == 'willcome'){
+				throw new BadRequestError('The training is either completed or you have already decided.');
+			}
+
+			//
 			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'player-decided-to-come'});
 
 		})
@@ -365,24 +385,24 @@ TrainingService = {
 		var t = null;
 		var ta = null;
 
+		//
+		return TrainingService.checkIsIdOkayOrDie(id)
+
+		//
+		.then(function(training){
+			return TrainingService.introducePlayerIdIfIdIsPublicized(playerId, id, training.publicized);
+		})
+
 		// Get the training by id.
-		return TrainingService.findForPlayerIdById(playerId, id)
+		.then(function(){
+			return TrainingService.findForPlayerIdById(playerId, id)
+		})
 
 		//
 		.then(function(training){
 
-			// Check if the training is valid.
-			if (!training){
-				throw new BadRequestError('لا يُمكن العثور على التمرين.');
-			}
-
 			//
 			t = training;
-
-			// Check if the training is already canceled.
-			if (t.status == 'canceled' || t.status == 'started' || t.status == 'completed'){
-				throw new BadRequestError('Cannot apologize for now.');
-			}
 
 			// Check if the player id has decided.
 			if (t.decision == 'apologize'){
@@ -420,6 +440,20 @@ TrainingService = {
 			// Just to assure that the promise has been fullfilled.
 			return true;
 		})
+	},
+
+	//
+	professionalizeByPlayerForId: function(playerId, id){
+
+	},
+
+	//
+	publicizeByPlayerForId: function(playerId, id){
+
+	},
+
+	pokeByPlayerForId: function(playerId, id){
+
 	},
 
 	//

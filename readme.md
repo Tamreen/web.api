@@ -13,6 +13,7 @@
 - Make the trainings start and complete (probably by creating a worker).
 - Create a worker to make the activities of all players read if a training completed or canceled.
 - Remove debugging notes later.
+- When adding a new member to a group, make sure that the player joins the current trainings.
 
 ## /api/v2
 - [x] GET /hellos
@@ -558,6 +559,10 @@
 ```
 
 - [ ] PUT /trainings/:id/professionalize
+
+> RESPONSE 204
+
+- [ ] PUT /trainings/:id/bringprofessional
 
 > RESPONSE 204
 
