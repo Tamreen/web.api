@@ -173,17 +173,14 @@
 
 ```json
 {
-	"coordinates": [12.4, 67.3]
+    "coordinates": {"x": 124.66, "y": 76.89},
 }
 ```
 > RESPONSE
 
 ```json
 [
-	{
-		"name": "Mon 2015", "startedAt": "12 Dec 2015",
-		"status": "gathering", "percentage": 15
-	},
+    # TODO: This response has to be validated.
 ]
 ```
 
@@ -269,8 +266,6 @@
 > RESPONSE 204
 
 - [x] POST /trainings
-
-TODO: The checking of a near by place is important.
 
 > REQUEST
 
@@ -509,20 +504,56 @@ TODO: The checking of a near by place is important.
 
 > RESPONSE 204
 
-- [ ] PUT /trainings/§:id
+- [x] PUT /trainings/:id
 
 > REQUEST 
 
 ```json
 {
-	"coordinates": "", 
+    "coordinates": {"x": 120.1221212, "y": 56.21}
 }
 ```
 > RESPONSE
 
 ```json
 {
-	# TODO: The response must be a training.
+    "id": 177,
+    "name": "الأربعاء، ١٢ نوفمبر ٢٠١٤، ١١:١١ ص",
+    "status": "gathering",
+    "stadium": "Riyadh",
+    "coordinates": {
+        "x": 120.1221212,
+        "y": 56.21
+    },
+    "startedAt": "2014-11-12T08:11:33.000Z",
+    "playersCount": 12,
+    "professionalized": 0,
+    "publicized": 1,
+    "createdAt": "2015-10-08T19:21:34.000Z",
+    "modifiedAt": "2015-10-10T00:17:24.000Z",
+    "adminable": 1,
+    "willcomePlayersCount": 11,
+    "apologizePlayersCount": 3,
+    "decision": "willcome",
+    "percentage": 91.6667,
+    "willcomePlayers": [
+        {
+            "fullname": "وسام الخالد",
+            "id": 1
+        },
+        {
+            "fullname": "إبراهيم العبدالرحمن",
+            "id": 11
+        },
+        {
+            "fullname": "يونس الحسام",
+            "id": 33
+        },
+    ],
+    "apologizePlayers": [
+    ],
+    "notyetPlayers": [
+    ]
 }
 ```
 

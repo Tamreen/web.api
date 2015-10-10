@@ -202,6 +202,52 @@ router.put('/trainings/:id/apologize', authenticatable, function(request, respon
 	});
 });
 
+// PUT /trainings/:id
+router.put('/trainings/:id', authenticatable, function(request, response){
+
+	//
+	if (!validator.isNumeric(request.params.id) || validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.x) || validator.isNull(request.body.coordinates.y)){
+		return response.status(400).send({
+			'message': 'Please make sure everything is valid.',
+		});
+	}
+
+	//
+	var id = request.params.id;
+	var coordinates = request.body.coordinates;
+	var u = null;
+
+	//
+	UserService.findCurrentOrDie(request)
+
+	//
+	.then(function(user){
+		u = user;
+		return TrainingService.checkIsPlayerIdAdminForIdOrDie(user.playerId, id);
+	})
+
+	//
+	.then(function(trainingPlayer){
+		return TrainingService.updateCoordinatesForId(coordinates.x, coordinates.y, id)
+	})
+
+	//
+	.then(function(user){
+		return TrainingService.detailsByPlayerIdAndId(u.playerId, id);
+	})
+
+	// Response about it.
+	.then(function(training){
+		return response.send(training);
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+
+});
+
 // POST /trainings/:id/professionals/bring
 router.post('/trainings/:id/professionals/bring', authenticatable, function(request, response){
 

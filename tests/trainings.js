@@ -18,13 +18,13 @@ require('../server');
 
 // });
 
-TrainingService.findForPlayerIdById(1, 177)
+// TrainingService.findForPlayerIdById(1, 177)
 
-.then(function(training){
+// .then(function(training){
 
-	console.log(training);
+// 	console.log(training);
 
-});
+// });
 
 // TrainingService.detailsByPlayerIdAndId(65, 19)
 
@@ -41,3 +41,9 @@ TrainingService.findForPlayerIdById(1, 177)
 // 	console.log(training);
 
 // });
+
+TrainingService.checkIsPlayerIdAdminForIdOrDie(1, 177)
+
+.then(function(trainingPlayer){
+	console.log(trainingPlayer);
+});

@@ -68,7 +68,7 @@ TrainingService = {
 	// TODO: Or as a solution we could order them by latest.
 	listAroundForPlayerId: function(playerId, parameters){
 
-		var queryListAroundTrainings = DatabaseService.format('select *, st_distance(coordinates, point(?,?)) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and st_distance(coordinates, point(?,?)) is not null', [parameters.coordinates.x, parameters.coordinates.y, playerId, parameters.coordinates.x, parameters.coordinates.y]);
+		var queryListAroundTrainings = DatabaseService.format('select *, st_distance(coordinates, point(? ?)) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and st_distance(coordinates, point(? ?)) is not null', [parameters.coordinates.x, parameters.coordinates.y, playerId, parameters.coordinates.x, parameters.coordinates.y]);
 
 		return DatabaseService.query(queryListAroundTrainings);
 	},
@@ -241,6 +241,44 @@ TrainingService = {
 		
 		// TODO: This could be fixed in a better way.
 		return DatabaseService.query(queryUpdateTrainingById);
+	},
+
+	//
+	updateCoordinatesForId: function(x, y, id){
+
+		//
+		var modifiedAt = new Date();
+
+		var queryUpdateTrainingById = DatabaseService.format('update trainings set coordinates = geomfromtext(\'point(? ?)\'), modifiedAt = ? where id = ?', [x, y, modifiedAt, id]);
+		
+		// TODO: This could be fixed in a better way.
+		return DatabaseService.query(queryUpdateTrainingById);
+
+	},
+
+	//
+	checkIsPlayerIdAdminForIdOrDie: function(playerId, id){
+
+		return new Promise(function(resolve, reject){
+
+			// Check if the player is an admin for a training id.
+			var queryGetTrainingPlayer = DatabaseService.format('select * from trainingPlayers where playerId = ? and trainingId = ? and role = \'admin\'', [playerId, id])
+
+			//
+			DatabaseService.query(queryGetTrainingPlayer)
+
+			//
+			.then(function(trainingPlayers){
+
+				if (trainingPlayers.length == 0){
+					return reject(new UnauthorizedError('You cannot reach this training, you are not admin for it.'));
+				}
+
+				//
+				var trainingPlayer = trainingPlayers[0];
+				return resolve(trainingPlayer);
+			});
+		});
 	},
 
 	//
