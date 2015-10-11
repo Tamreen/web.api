@@ -42,8 +42,25 @@ require('../server');
 
 // });
 
-TrainingService.checkIsPlayerIdAdminForIdOrDie(1, 177)
+// TrainingService.checkIsPlayerIdAdminForIdOrDie(1, 177)
 
-.then(function(trainingPlayer){
-	console.log(trainingPlayer);
+// .then(function(trainingPlayer){
+// 	console.log(trainingPlayer);
+// });
+
+TrainingService.professionalizeByPlayerForId(1, 177)
+
+//
+.then(function(result){
+	// console.log(result);
+
+	return TrainingService.detailsByPlayerIdAndId(1, 177)
+
+})
+
+//
+.then(function(training){
+
+	console.log(training);
+
 });

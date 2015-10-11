@@ -257,31 +257,6 @@ TrainingService = {
 
 	},
 
-	// //
-	// checkIsPlayerIdAdminForIdOrDie: function(playerId, id){
-
-	// 	return new Promise(function(resolve, reject){
-
-	// 		// Check if the player is an admin for a training id.
-	// 		var queryGetTrainingPlayer = DatabaseService.format('select * from trainingPlayers where playerId = ? and trainingId = ? and role = \'admin\'', [playerId, id])
-
-	// 		//
-	// 		DatabaseService.query(queryGetTrainingPlayer)
-
-	// 		//
-	// 		.then(function(trainingPlayers){
-
-	// 			if (trainingPlayers.length == 0){
-	// 				return reject(new UnauthorizedError('You cannot reach this training, you are not admin for it.'));
-	// 			}
-
-	// 			//
-	// 			var trainingPlayer = trainingPlayers[0];
-	// 			return resolve(trainingPlayer);
-	// 		});
-	// 	});
-	// },
-
 	//
 	checkIsIdOkayOrDie: function(id){
 
@@ -445,14 +420,46 @@ TrainingService = {
 	//
 	professionalizeByPlayerForId: function(playerId, id){
 
-		// TODO: checkIsIdOkayOrDie.
-		// TODO: Check if the playerId is in id.
-		// TODO: Check if the player is an admin.
-		// TODO: Check if the training is already professionalized.
+		//
+		var t = null;
+
+		return TrainingService.checkIsIdOkayOrDie(id)
+
+		//
+		.then(function(training){
+			return TrainingService.findForPlayerIdById(playerId, id)
+		})
+
+		//
+		.then(function(training){
+
+			// Check if the player is not an admin, or the training is already professionalized, or the gathering is completed.
+			if (training.adminable != 1 || training.professionalized == 1 || training.status == 'gathering-completed'){
+				throw new BadRequestError('Cannot professionalize the training, maybe you are not admin or it is already professionalized or the gathering is completed.');
+			}
+
+			//
+			t = training;
+
+			return true;
+		})
+
+		//
+		.then(function(){
+			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-professionalized'});
+		})
+
+		//
+		.then(function(){
+			return TrainingService.updateForId({professionalized: 1}, t.id);
+		});
+
 	},
 
 	//
 	publicizeByPlayerForId: function(playerId, id){
+
+		// TODO: The training must have coordinates to be public.
 
 	},
 
