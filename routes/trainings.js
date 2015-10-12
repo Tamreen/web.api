@@ -350,13 +350,41 @@ router.put('/trainings/:id/publicize', authenticatable, function(request, respon
 
 });
 
-// TODO: PUT /trainings/:id/poke
-// TODO: PUT /trainings/:id/cancel
-// TODO: PUT /trainings/:id/players/:playerId/willcome
-// TODO: PUT /trainings/:id/players/:playerId/apologize
+// PUT /trainings/:id/poke
+router.put('/trainings/:id/poke', authenticatable, function(request, response){
 
-// GET /trainings/:id/cancel
-router.get('/trainings/:id/cancel', authenticatable, function(request, response){
+	//
+	if (!validator.isNumeric(request.params.id)){
+		return response.status(400).send({
+			'message': 'Please make sure that the training id is valid.',
+		});
+	}
+
+	//
+	var id = request.params.id;
+
+	//
+	UserService.findCurrentOrDie(request)
+
+	//
+	.then(function(user){
+		return TrainingService.pokeByPlayerForId(user.playerId, id);
+	})
+
+	// Response about it.
+	.then(function(){
+		return response.status(204).send();
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+
+});
+
+// PUT /trainings/:id/cancel
+router.put('/trainings/:id/cancel', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
 		return response.status(400).send({
@@ -385,8 +413,8 @@ router.get('/trainings/:id/cancel', authenticatable, function(request, response)
 	});
 });
 
-// GET /trainings/:id/players/:playerId/willcome
-router.get('/trainings/:id/players/:playerId/willcome', authenticatable, function(request, response){
+// PUT /trainings/:id/players/:playerId/willcome
+router.put('/trainings/:id/players/:playerId/willcome', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id) || !validator.isNumeric(request.params.playerId)){
 		return response.status(400).send({
@@ -434,8 +462,8 @@ router.get('/trainings/:id/players/:playerId/willcome', authenticatable, functio
 	});
 });
 
-// GET /trainings/:id/players/:playerId/apologize
-router.get('/trainings/:id/players/:playerId/apologize', authenticatable, function(request, response){
+// PUT /trainings/:id/players/:playerId/apologize
+router.put('/trainings/:id/players/:playerId/apologize', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id) || !validator.isNumeric(request.params.playerId)){
 		return response.status(400).send({

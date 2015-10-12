@@ -579,7 +579,7 @@
 
 > RESPONSE 204
 
-- [ ] PUT /trainings/:id/poke
+- [x] PUT /trainings/:id/poke
 
 > RESPONSE 204
 

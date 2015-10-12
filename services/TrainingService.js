@@ -194,45 +194,6 @@ TrainingService = {
 	},
 
 	//
-	cancelIdByPlayerId: function(id, playerId){
-
-		//
-		var t = null;
-
-		// Get the training by id.
-		return TrainingService.findForPlayerIdById(playerId, id)
-
-		//
-		.then(function(training){
-
-			// Check if the training is valid.
-			if (!training){
-				throw new BadRequestError('لا يُمكن العثور على التمرين.');
-			}
-
-			//
-			t = training;
-
-			// Check if the player id is not admin.
-			if (training.adminable == 0){
-				throw new BadRequestError('لا يُمكن إلغاء التمرين إلا بواسطة مدير المجموعة.');
-			}
-
-			// Check if the training is already canceled.
-			if (training.status == 'canceled'){
-				throw new BadRequestError('التمرين قد أُلغي مُسبقًا.');
-			}
-
-			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-canceled'});
-		})
-
-		// Update the status of the training to be 'canceled'.
-		.then(function(trainingActivity){
-			return TrainingService.updateForId({status: 'canceled'}, t.id);
-		});
-	},
-
-	//
 	updateForId: function(parameters, id){
 
 		//
@@ -453,7 +414,6 @@ TrainingService = {
 		.then(function(){
 			return TrainingService.updateForId({professionalized: 1}, t.id);
 		});
-
 	},
 
 	//
@@ -551,10 +511,69 @@ TrainingService = {
 		.then(function(){
 			return TrainingService.updateForId({publicized: 1}, t.id);
 		});
-
 	},
 
+	//
 	pokeByPlayerForId: function(playerId, id){
 
+		//
+		return TrainingService.checkIsIdOkayOrDie(id)
+
+		//
+		.then(function(training){
+			return TrainingService.findForPlayerIdById(playerId, id)
+		})
+
+		//
+		.then(function(training){
+
+			// Check if the player is not an admin, or the gathering is completed.
+			if (training.adminable != 1 || training.status == 'gathering-completed'){
+				throw new BadRequestError('Cannot poke the training, maybe you are not an admin or the gathering is completed.');
+			}
+
+			//
+			return training;
+		})
+
+		//
+		.then(function(training){
+			return TrainingActivityService.create({trainingId: training.id, authorId: playerId, type: 'training-poked'});
+		})
+	},
+
+	//
+	cancelIdByPlayerId: function(id, playerId){
+
+		//
+		var t = null;
+
+		//
+		return TrainingService.checkIsIdOkayOrDie(id)
+
+		// Get the training by id.
+		.then(function(training){
+			return TrainingService.findForPlayerIdById(playerId, id);
+		})
+
+		//
+		.then(function(training){
+
+			//
+			t = training;
+
+			//
+			if (t.adminable != 1){
+				throw new BadRequestError('Cannot cancel the training since you are not an admin.');
+			}
+
+			//
+			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-canceled'});
+		})
+
+		// Update the status of the training to be 'canceled'.
+		.then(function(trainingActivity){
+			return TrainingService.updateForId({status: 'canceled'}, t.id);
+		});
 	},
 };
