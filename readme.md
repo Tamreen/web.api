@@ -575,7 +575,7 @@
 
 > RESPONSE 204
 
-- [ ] PUT /trainings/:id/publicize
+- [x] PUT /trainings/:id/publicize
 
 > RESPONSE 204
 

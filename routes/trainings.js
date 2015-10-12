@@ -266,7 +266,7 @@ router.put('/trainings/:id/professionalize', authenticatable, function(request, 
 	//
 	UserService.findCurrentOrDie(request)
 
-	// TODO: Professionalize.
+	//
 	.then(function(user){
 		return TrainingService.professionalizeByPlayerForId(user.playerId, id);
 	})
@@ -317,7 +317,39 @@ router.put('/trainings/:id/bringprofessional', authenticatable, function(request
 	});
 });
 
-// TODO: PUT /trainings/:id/publicize
+// PUT /trainings/:id/publicize
+router.put('/trainings/:id/publicize', authenticatable, function(request, response){
+
+	//
+	if (!validator.isNumeric(request.params.id)){
+		return response.status(400).send({
+			'message': 'Please make sure that the training id is valid.',
+		});
+	}
+
+	//
+	var id = request.params.id;
+
+	//
+	UserService.findCurrentOrDie(request)
+
+	//
+	.then(function(user){
+		return TrainingService.publicizeByPlayerForId(user.playerId, id);
+	})
+
+	// Response about it.
+	.then(function(){
+		return response.status(204).send();
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+
+});
+
 // TODO: PUT /trainings/:id/poke
 // TODO: PUT /trainings/:id/cancel
 // TODO: PUT /trainings/:id/players/:playerId/willcome

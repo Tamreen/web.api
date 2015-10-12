@@ -513,7 +513,44 @@ TrainingService = {
 	//
 	publicizeByPlayerForId: function(playerId, id){
 
-		// TODO: The training must have coordinates to be public.
+		//
+		var t = null;
+
+		return TrainingService.checkIsIdOkayOrDie(id)
+
+		//
+		.then(function(training){
+			return TrainingService.findForPlayerIdById(playerId, id)
+		})
+
+		//
+		.then(function(training){
+
+			// Check if the player is not an admin, or the training is already publicized, or the gathering is completed.
+			if (training.adminable != 1 || training.publicized == 1 || training.status == 'gathering-completed'){
+				throw new BadRequestError('Cannot publicized the training, maybe you are not an admin or it is already publicized or the gathering is completed.');
+			}
+
+			// Check if the training does not have coordinates.
+			if (validator.isNull(training.coordinates)){
+				throw new ConflictError('The coordinates have to be provided.');
+			}
+
+			//
+			t = training;
+
+			return true;
+		})
+
+		//
+		.then(function(){
+			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-publicized'});
+		})
+
+		//
+		.then(function(){
+			return TrainingService.updateForId({publicized: 1}, t.id);
+		});
 
 	},
 
