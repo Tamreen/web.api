@@ -255,25 +255,25 @@ router.delete('/groups/:id/players/:playerId', authenticatable, function(request
 	});
 });
 
-// GET /groups/:groupId/players/:id/adminize
-router.get('/groups/:groupId/players/:id/adminize', authenticatable, function(request, response){
+// GET /groups/:id/players/:playerId/adminize
+router.get('/groups/:id/players/:playerId/adminize', authenticatable, function(request, response){
 
-	if (!validator.isNumeric(request.params.groupId) || !validator.isNumeric(request.params.id)){
+	if (!validator.isNumeric(request.params.id) || !validator.isNumeric(request.params.playerId)){
 		return response.status(400).send({
 			'message': 'الرجاء التأكّد من اختيار اللاعب الصحيح في المجموعة الصحيحة.',
 		});
 	}
 
 	// Define variables to be used.
-	var groupId = request.params.groupId; 
-	var id = request.params.id;
+	var id = request.params.id; 
+	var playerId = request.params.playerId;
 
 	//
 	UserService.findCurrentOrDie(request)
 
 	//
 	.then(function(user){
-		return GroupService.adminizePlayerIdByAdminPlayerIdInId(id, user.playerId, groupId);
+		return GroupService.adminizePlayerIdByAdminPlayerIdInId(playerId, user.playerId, id);
 	})
 
 	// Response about it.

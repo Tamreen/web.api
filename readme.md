@@ -599,6 +599,6 @@
 
 > RESPONSE 204
 
-- [ ] PUT /groups/:id/players/:playerId/adminize
+- [x] PUT /groups/:id/players/:playerId/adminize
 
 > RESPONSE 204
