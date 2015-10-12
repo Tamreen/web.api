@@ -583,7 +583,7 @@
 
 > RESPONSE 204
 
-- [ ] PUT /trainings/:id/cancel
+- [x] PUT /trainings/:id/cancel
 
 > RESPONSE 204
 
