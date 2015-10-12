@@ -429,26 +429,11 @@ router.put('/trainings/:id/players/:playerId/willcome', authenticatable, functio
 	//
 	UserService.findCurrentOrDie(request)
 
+	// TODO: The user must be an admin.
+
 	//
 	.then(function(user){
-		return TrainingService.findForPlayerIdById(user.playerId, id);
-	})
-
-	//
-	.then(function(training){
-
-		//
-		if (!training){
-			throw new BadRequestError('لا يُمكن العثور على التمرين.');
-		}
-
-		//
-		if (!training.adminable){
-			throw new BadRequestError('لا يُمكن اتخذا هذا القرار لكونك لست مديرًا.');
-		}
-
-		//
-		return TrainingService.decideForPlayerIdToComeToId(playerId, id, false, false);
+		return TrainingService.decideForPlayerIdToComeToId(playerId, id);
 	})
 
 	// Response about it.
@@ -460,6 +445,7 @@ router.put('/trainings/:id/players/:playerId/willcome', authenticatable, functio
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
+
 });
 
 // PUT /trainings/:id/players/:playerId/apologize
@@ -478,25 +464,10 @@ router.put('/trainings/:id/players/:playerId/apologize', authenticatable, functi
 	//
 	UserService.findCurrentOrDie(request)
 
+	// TODO: The user must be an admin.
+
 	//
 	.then(function(user){
-		return TrainingService.findForPlayerIdById(user.playerId, id);
-	})
-
-	//
-	.then(function(training){
-
-		//
-		if (!training){
-			throw new BadRequestError('لا يُمكن العثور على التمرين.');
-		}
-
-		//
-		if (!training.adminable){
-			throw new BadRequestError('لا يُمكن اتخذا هذا القرار لكونك لست مديرًا.');
-		}
-
-		//
 		return TrainingService.decideForPlayerIdToApologizeToId(playerId, id);
 	})
 
@@ -509,4 +480,5 @@ router.put('/trainings/:id/players/:playerId/apologize', authenticatable, functi
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
+
 });

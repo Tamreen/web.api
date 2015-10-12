@@ -587,11 +587,11 @@
 
 > RESPONSE 204
 
-- [ ] PUT /trainings/:id/players/:playerId/willcome
+- [x] PUT /trainings/:id/players/:playerId/willcome
 
 > RESPONSE 204
 
-- [ ] PUT /trainings/:id/players/:playerId/apologize
+- [x] PUT /trainings/:id/players/:playerId/apologize
 
 > RESPONSE 204
 
