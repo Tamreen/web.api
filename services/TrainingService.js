@@ -435,7 +435,7 @@ TrainingService = {
 
 			// Check if the player is not an admin, or the training is already professionalized, or the gathering is completed.
 			if (training.adminable != 1 || training.professionalized == 1 || training.status == 'gathering-completed'){
-				throw new BadRequestError('Cannot professionalize the training, maybe you are not admin or it is already professionalized or the gathering is completed.');
+				throw new BadRequestError('Cannot professionalize the training, maybe you are not an admin or it is already professionalized or the gathering is completed.');
 			}
 
 			//

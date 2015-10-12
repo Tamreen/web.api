@@ -558,7 +558,7 @@
 }
 ```
 
-- [ ] PUT /trainings/:id/professionalize
+- [x] PUT /trainings/:id/professionalize
 
 > RESPONSE 204
 

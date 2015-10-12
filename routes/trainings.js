@@ -61,13 +61,14 @@ router.post('/trainings', authenticatable, function(request, response){
 	//
 	var u = null;
 
-	// TODO: Add the coordinates checking when publicized.
+	//
 	if (validator.isNull(request.body.stadium) || !validator.isDate(request.body.startedAt) || !validator.isNumeric(request.body.playersCount) || request.body.playersCount <= 0 || validator.isNull(request.body.publicized) || !request.body.groups instanceof Array){
 		return response.status(400).send({
 			'message': 'الرجاء التأكّد من تعبئة الحقول المطلوبة.',
 		});
 	}
 
+	//
 	if (request.body.publicized == 1 && (validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.x) || validator.isNull(request.body.coordinates.y))){
 		return response.status(400).send({
 			'message': 'الرجاء تحديد موقع الملعب الجغرافيّ.',
@@ -200,6 +201,7 @@ router.put('/trainings/:id/apologize', authenticatable, function(request, respon
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
+
 });
 
 // PUT /trainings/:id
@@ -248,7 +250,39 @@ router.put('/trainings/:id', authenticatable, function(request, response){
 
 });
 
-// TODO: PUT /trainings/:id/professionalize
+// PUT /trainings/:id/professionalize
+router.put('/trainings/:id/professionalize', authenticatable, function(request, response){
+
+	//
+	if (!validator.isNumeric(request.params.id)){
+		return response.status(400).send({
+			'message': 'Please make sure that the training id is valid.',
+		});
+	}
+
+	//
+	var id = request.params.id;
+
+	//
+	UserService.findCurrentOrDie(request)
+
+	// TODO: Professionalize.
+	.then(function(user){
+		return TrainingService.professionalizeByPlayerForId(user.playerId, id);
+	})
+
+	// Response about it.
+	.then(function(){
+		return response.status(204).send();
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
+
+});
+
 // TODO: PUT /trainings/:id/publicize
 // TODO: PUT /trainings/:id/poke
 // TODO: PUT /trainings/:id/cancel
