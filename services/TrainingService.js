@@ -25,7 +25,7 @@ TrainingService = {
 
 		return DatabaseService.query(queryGetTraining).then(function(trainings){
 
-			// TODO: Check if the training is public, then, there is no need.
+			//
 			if (trainings.length == 0){
 				return null;
 			}
@@ -201,7 +201,7 @@ TrainingService = {
 
 		var queryUpdateTrainingById = DatabaseService.format('update trainings set ? where id = ?', [parameters, id]);
 		
-		// TODO: This could be fixed in a better way.
+		//
 		return DatabaseService.query(queryUpdateTrainingById);
 	},
 
@@ -213,7 +213,7 @@ TrainingService = {
 
 		var queryUpdateTrainingById = DatabaseService.format('update trainings set coordinates = geomfromtext(\'point(? ?)\'), modifiedAt = ? where id = ?', [x, y, modifiedAt, id]);
 		
-		// TODO: This could be fixed in a better way.
+		//
 		return DatabaseService.query(queryUpdateTrainingById);
 
 	},

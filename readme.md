@@ -595,10 +595,10 @@
 
 > RESPONSE 204
 
-- [ ] DELETE /groups/:id/players/:playerId
+- [x] DELETE /groups/:id/players/:playerId
 
 > RESPONSE 204
 
-- [ ] PUT /groups/:id/players/:playerId/adminable
+- [ ] PUT /groups/:id/players/:playerId/adminize
 
 > RESPONSE 204
