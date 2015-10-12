@@ -283,15 +283,10 @@ router.put('/trainings/:id/professionalize', authenticatable, function(request, 
 
 });
 
-// TODO: PUT /trainings/:id/publicize
-// TODO: PUT /trainings/:id/poke
-// TODO: PUT /trainings/:id/cancel
-// TODO: PUT /trainings/:id/players/:playerId/willcome
-// TODO: PUT /trainings/:id/players/:playerId/apologize
+// PUT /trainings/:id/bringprofessional
+router.put('/trainings/:id/bringprofessional', authenticatable, function(request, response){
 
-// POST /trainings/:id/professionals/bring
-router.post('/trainings/:id/professionals/bring', authenticatable, function(request, response){
-
+	// Validate the inputs.
 	if (!validator.isNumeric(request.params.id) || validator.isNull(request.body.fullname) || !e164Format.test(request.body.e164formattedMobileNumber)){
 		return response.status(400).send({
 			'message': 'الرجاء التأكّد من توفّر المعلومات الكاملة الخاصّة باللاعب.',
@@ -321,6 +316,12 @@ router.post('/trainings/:id/professionals/bring', authenticatable, function(requ
 		return handleApiErrors(error, response);
 	});
 });
+
+// TODO: PUT /trainings/:id/publicize
+// TODO: PUT /trainings/:id/poke
+// TODO: PUT /trainings/:id/cancel
+// TODO: PUT /trainings/:id/players/:playerId/willcome
+// TODO: PUT /trainings/:id/players/:playerId/apologize
 
 // GET /trainings/:id/cancel
 router.get('/trainings/:id/cancel', authenticatable, function(request, response){

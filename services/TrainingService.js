@@ -348,7 +348,7 @@ TrainingService = {
 				});
 			}
 
-			// Just to assure that the promise has been fullfilled.
+			// Just to assure that the promise has been fulfilled.
 			return true;
 		})
 	},
@@ -412,7 +412,7 @@ TrainingService = {
 				});
 			}
 
-			// Just to assure that the promise has been fullfilled.
+			// Just to assure that the promise has been fulfilled.
 			return true;
 		})
 	},
@@ -457,36 +457,38 @@ TrainingService = {
 	},
 
 	//
-	publicizeByPlayerForId: function(playerId, id){
-
-		// TODO: The training must have coordinates to be public.
-
-	},
-
-	pokeByPlayerForId: function(playerId, id){
-
-	},
-
-	//
 	bringProfessionalByPlayerIdForId: function(professionalParameters, playerId, id){
 
+		//
+		var t = null;
 		var professional = null;
 
-		// Create the user.
-		return UserService.findByE164formattedMobileNumberOrCreate(professionalParameters.e164formattedMobileNumber, {fullname: professionalParameters.fullname}, true)
+		// Check if the training does exist.
+		return TrainingService.checkIsIdOkayOrDie(id)
 
-		// Find the training.
+		// Check if the training is 'professionalized' or 'gathering-completed'.
+		.then(function(training){
+
+			if (training.professionalized == 0 || training.status == 'gathering-completed'){
+				throw new BadRequestError('The training is not professionalized or the gathering is completed.');
+			}
+
+			// Fulfill the promise.
+			return true;
+		})
+
+		// Find or create the user.
+		.then(function(){
+			return UserService.findByE164formattedMobileNumberOrCreate(professionalParameters.e164formattedMobileNumber, {fullname: professionalParameters.fullname}, true);
+		})
+
+		// Find the training player or create.
 		.then(function(user){
 			professional = user;
-			return TrainingService.findById(id);
+			return TrainingPlayerService.findByTrainingIdAndPlayerId(id, professional.playerId);
 		})
 
 		//
-		.then(function(training){
-			return TrainingPlayerService.findByTrainingIdAndPlayerId(training.id, professional.playerId);
-		})
-
-		// Check if the user is already in the training.
 		.then(function(trainingPlayer){
 
 			if (trainingPlayer){
@@ -497,19 +499,25 @@ TrainingService = {
 			return TrainingPlayerService.create({trainingId: id, playerId: professional.playerId, decision: 'notyet'});
 		})
 
-		//
+		// Create an activity saying that player id has brought a professional.
 		.then(function(trainingPlayer){
-			return TrainingService.findBestIdForPlayerIdOrDie(professional.playerId, id, false, true);
-		})
-
-		// Add a new activity of bringing a professional.
-		.then(function(training){
 			return TrainingActivityService.create({trainingId: id, authorId: playerId, type: 'player-brought-professional'});
 		})
 
 		// Decide for the professional to come.
 		.then(function(trainingActivity){
-			return TrainingService.decideForPlayerIdToComeToId(professional.playerId, id, false, true);
+			return TrainingService.decideForPlayerIdToComeToId(professional.playerId, id);
 		});
+	},
+
+	//
+	publicizeByPlayerForId: function(playerId, id){
+
+		// TODO: The training must have coordinates to be public.
+
+	},
+
+	pokeByPlayerForId: function(playerId, id){
+
 	},
 };

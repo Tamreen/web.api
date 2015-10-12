@@ -514,6 +514,7 @@
     "coordinates": {"x": 120.1221212, "y": 56.21}
 }
 ```
+
 > RESPONSE
 
 ```json
@@ -562,7 +563,15 @@
 
 > RESPONSE 204
 
-- [ ] PUT /trainings/:id/bringprofessional
+- [x] PUT /trainings/:id/bringprofessional
+
+> REQUEST
+```json
+{
+    "fullname": "Amhad Ali Kli",
+    "e164formattedMobileNumber": "+966778890099"
+}
+```
 
 > RESPONSE 204
 

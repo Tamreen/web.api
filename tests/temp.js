@@ -88,7 +88,7 @@ require('../server');
 
 // TrainingService.cancelIdByPlayerId(21, 1)
 // .then(function(done){
-// 	console.log('The promise has been fullfilled.');
+// 	console.log('The promise has been fulfilled.');
 // });
 
 // TrainingActivityService.listByTrainingIdAndPlayerId(15, 1)
