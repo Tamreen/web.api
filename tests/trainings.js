@@ -10,13 +10,13 @@ require('../server');
 
 // });
 
-// TrainingService.listAroundForPlayerId(1, {coordinates: [124, 432]})
+TrainingService.listAroundForPlayerId(1, {coordinates: {x: 124, y: 432}})
 
-// .then(function(trainings){
+.then(function(trainings){
 
-// 	console.log(trainings);
+	console.log(trainings);
 
-// });
+});
 
 // TrainingService.findForPlayerIdById(1, 177)
 
@@ -48,19 +48,19 @@ require('../server');
 // 	console.log(trainingPlayer);
 // });
 
-TrainingService.professionalizeByPlayerForId(1, 177)
+// TrainingService.professionalizeByPlayerForId(1, 177)
 
-//
-.then(function(result){
-	// console.log(result);
+// //
+// .then(function(result){
+// 	// console.log(result);
 
-	return TrainingService.detailsByPlayerIdAndId(1, 177)
+// 	return TrainingService.detailsByPlayerIdAndId(1, 177)
 
-})
+// })
 
-//
-.then(function(training){
+// //
+// .then(function(training){
 
-	console.log(training);
+// 	console.log(training);
 
-});
+// });
