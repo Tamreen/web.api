@@ -262,7 +262,7 @@
 }
 ```
 
-- [x] DELETE /groups/:id/players/:playerId
+- [x] DELETE /groups/:id
 
 > RESPONSE 204
 

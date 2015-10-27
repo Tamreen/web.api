@@ -152,8 +152,8 @@ router.get('/groups/:id/leave', authenticatable, function(request, response){
 	});
 });
 
-// GET /groups/:id/delete
-router.get('/groups/:id/delete', authenticatable, function(request, response){
+// DELETE /groups/:id
+router.delete('/groups/:id', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
 		return response.status(400).send({
@@ -255,8 +255,8 @@ router.delete('/groups/:id/players/:playerId', authenticatable, function(request
 	});
 });
 
-// GET /groups/:id/players/:playerId/adminize
-router.get('/groups/:id/players/:playerId/adminize', authenticatable, function(request, response){
+// PUT /groups/:id/players/:playerId/adminize
+router.put('/groups/:id/players/:playerId/adminize', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id) || !validator.isNumeric(request.params.playerId)){
 		return response.status(400).send({
