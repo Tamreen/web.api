@@ -119,11 +119,10 @@ router.put('/groups/:id', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
-// GET /groups/:id/leave
-router.get('/groups/:id/leave', authenticatable, function(request, response){
+// PUT /groups/:id/leave
+router.put('/groups/:id/leave', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){
 		return response.status(400).send({

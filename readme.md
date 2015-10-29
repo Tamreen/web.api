@@ -14,6 +14,7 @@
 - Create a worker to make the activities of all players read if a training completed or canceled.
 - Remove debugging notes later.
 - When adding a new member to a group, make sure that the player joins the current trainings.
+- When sending an invalid JSON, the API should response differently.
 
 ## /api/v2
 - [x] GET /hellos
@@ -263,6 +264,10 @@
 ```
 
 - [x] DELETE /groups/:id
+
+> RESPONSE 204
+
+- [x] PUT /groups/:id/leave
 
 > RESPONSE 204
 

@@ -21,7 +21,7 @@ GroupService = {
 	//
 	listForPlayerId: function(playerId){
 
-		var queryListGroupsForPlayerId = DatabaseService.format('select groups.id, groups.name, count(groupPlayers.id) as playersCount, groups.createdAt from (select * from groupPlayers where playerId = ? and leftAt is null group by groupId) as playerGroups, groups, groupPlayers where playerGroups.groupId = groups.id and groupPlayers.groupId = groups.id and groups.deletedAt is null and groupPlayers.leftAt is null group by groups.id', [playerId]);
+		var queryListGroupsForPlayerId = DatabaseService.format('select groups.id, groups.name, count(groupPlayers.id) as playersCount, (groupPlayers.role = \'admin\') as adminable, groups.createdAt from (select * from groupPlayers where playerId = ? and leftAt is null group by groupId) as playerGroups, groups, groupPlayers where playerGroups.groupId = groups.id and groupPlayers.groupId = groups.id and groups.deletedAt is null and groupPlayers.leftAt is null group by groups.id', [playerId]);
 
 		return DatabaseService.query(queryListGroupsForPlayerId);
 	},

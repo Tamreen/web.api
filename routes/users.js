@@ -73,8 +73,8 @@ router.put('/users/secondhandshake', function(request, response){
 	});
 });
 
-// GET /users/logout
-router.get('/users/logout', authenticatable, function(request, response){
+// PUT /users/logout
+router.put('/users/logout', authenticatable, function(request, response){
 
 	// Keep the user information for logging.
 	// It is better not to use one letter variables.
