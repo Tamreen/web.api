@@ -89,7 +89,13 @@ router.post('/trainings', authenticatable, function(request, response){
 
 	//
 	.then(function(user){
+
 		u = user;
+
+		if (publicized == 1){
+			return true;
+		}
+
 		return GroupService.checkIsPlayerIdAdminForIdsOrDie(u.playerId, groups);
 	})
 

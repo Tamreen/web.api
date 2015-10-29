@@ -263,6 +263,7 @@ GroupService = {
 			.then(function(groupPlayers){
 
 				if (groupPlayers.length != ids.length){
+					// TODO: This message should be kinder.
 					return reject(new UnauthorizedError('You cannot reach these groups, you are not admin for them.'));
 				}
 

@@ -81,6 +81,7 @@ router.get('/groups/:id', authenticatable, function(request, response){
 });
 
 // PUT /groups/:id
+// TODO: Validate if the user is an admin for the group.
 router.put('/groups/:id', authenticatable, function(request, response){
 
 	if (!validator.isNumeric(request.params.id)){

@@ -15,6 +15,7 @@
 - Remove debugging notes later.
 - When adding a new member to a group, make sure that the player joins the current trainings.
 - When sending an invalid JSON, the API should response differently.
+- Make all errors and exceptions in Arabic.
 
 ## /api/v2
 - [x] GET /hellos
