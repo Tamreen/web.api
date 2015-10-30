@@ -197,6 +197,7 @@ TrainingActivityService = {
 				throw new BadRequestError('لا يُمكن العثور على التمرين.');
 			}
 
+			//
 			var queryGetTrainingActivities = DatabaseService.format('select trainingActivities.*, players.fullname as author from trainingActivities, players where trainingActivities.authorId = players.id and trainingActivities.trainingId = ? order by trainingActivities.createdAt asc', [training.id]);
 
 			//
@@ -205,6 +206,8 @@ TrainingActivityService = {
 
 		//
 		.then(function(activities){
+
+			console.log(activities);
 
 			// Set that the activity is read by player id.
 			ActivityPlayerService.markAsReadManyByPlayerId(activities, playerId);

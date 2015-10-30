@@ -143,6 +143,8 @@ TrainingService = {
 	},
 
 	//
+	// TODO: readAt might cause performance issues.
+	// TODO: Not sure about readAt value.
 	listPlayersById: function(id){
 
 		var queryListTrainingPlayers = DatabaseService.format('select players.fullname, players.id, trainingPlayers.decision as decision from trainingPlayers, players where trainingPlayers.playerId = players.id and trainingPlayers.trainingId = ?', [id]);
@@ -198,6 +200,9 @@ TrainingService = {
 
 		//
 		.then(function(){
+
+			// TODO: Read the activities if the user called this methods.
+
 			return t;
 		})
 	},

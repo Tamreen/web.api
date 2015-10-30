@@ -489,3 +489,5 @@ router.put('/trainings/:id/players/:playerId/apologize', authenticatable, functi
 	});
 
 });
+
+// TODO: Enable the user to complete the gatherig manually.
