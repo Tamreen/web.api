@@ -17,6 +17,7 @@
 - When sending an invalid JSON, the API should response differently.
 - Make all errors and exceptions in Arabic.
 - Move the HTTPS logs to separated files.
+- Beautify the name of the trainings.
 
 ## /api/v2
 - [x] GET /hellos
