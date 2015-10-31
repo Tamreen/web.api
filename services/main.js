@@ -20,6 +20,7 @@ BadRequestError = function(message){
 }
 
 //
+// TODO: Update the name of the error to be not authorized.
 UnauthorizedError = function(message){
 	this.message = message;
 	this.statusCode = 401;

@@ -212,6 +212,7 @@ router.put('/trainings/:id/apologize', authenticatable, function(request, respon
 });
 
 // PUT /trainings/:id
+// TODO: Most of the code here must actually move to the services.
 router.put('/trainings/:id', authenticatable, function(request, response){
 
 	//
@@ -232,11 +233,16 @@ router.put('/trainings/:id', authenticatable, function(request, response){
 	//
 	.then(function(user){
 		u = user;
-		return TrainingService.checkIsPlayerIdAdminForIdOrDie(user.playerId, id);
+		return TrainingService.findForPlayerIdById(user.playerId, id);
 	})
 
 	//
-	.then(function(trainingPlayer){
+	.then(function(training){
+
+		if (training.adminable != 1){
+			throw new UnauthorizedError('You cannot update the training since you are not an admin.');
+		}
+
 		return TrainingService.updateCoordinatesForId(coordinates.x, coordinates.y, id)
 	})
 

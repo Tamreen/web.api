@@ -16,6 +16,7 @@
 - When adding a new member to a group, make sure that the player joins the current trainings.
 - When sending an invalid JSON, the API should response differently.
 - Make all errors and exceptions in Arabic.
+- Move the HTTPS logs to separated files.
 
 ## /api/v2
 - [x] GET /hellos
