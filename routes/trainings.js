@@ -19,7 +19,6 @@ router.get('/trainings/specified', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // TODO: I used PUT and I do not want to use it.
@@ -53,7 +52,6 @@ router.put('/trainings/around', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // POST /trainings
@@ -113,7 +111,6 @@ router.post('/trainings', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // GET /trainings/:id
@@ -208,7 +205,6 @@ router.put('/trainings/:id/apologize', authenticatable, function(request, respon
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // PUT /trainings/:id
@@ -260,7 +256,6 @@ router.put('/trainings/:id', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // PUT /trainings/:id/professionalize
@@ -293,7 +288,6 @@ router.put('/trainings/:id/professionalize', authenticatable, function(request, 
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // PUT /trainings/:id/bringprofessional
@@ -360,7 +354,6 @@ router.put('/trainings/:id/publicize', authenticatable, function(request, respon
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // PUT /trainings/:id/poke
@@ -393,7 +386,36 @@ router.put('/trainings/:id/poke', authenticatable, function(request, response){
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
+});
 
+// PUT /trainings/:id/complete
+router.put('/trainings/:id/complete', authenticatable, function(request, response){
+
+	if (!validator.isNumeric(request.params.id)){
+		return response.status(400).send({
+			'message': 'الرجاء التأكّد من اختيار تمرين صحيح.',
+		});
+	}
+
+	var id = request.params.id;
+
+	//
+	UserService.findCurrentOrDie(request)
+
+	//
+	.then(function(user){
+		return TrainingService.completeIdByPlayerId(id, user.playerId);
+	})
+
+	// Response about it.
+	.then(function(){
+		return response.status(204).send();
+	})
+
+	// Catch the error if any.
+	.catch(function(error){
+		return handleApiErrors(error, response);
+	});
 });
 
 // PUT /trainings/:id/cancel
@@ -458,7 +480,6 @@ router.put('/trainings/:id/players/:playerId/willcome', authenticatable, functio
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // PUT /trainings/:id/players/:playerId/apologize
@@ -493,7 +514,6 @@ router.put('/trainings/:id/players/:playerId/apologize', authenticatable, functi
 	.catch(function(error){
 		return handleApiErrors(error, response);
 	});
-
 });
 
 // TODO: Enable the user to complete the gatherig manually.
