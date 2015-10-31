@@ -63,7 +63,6 @@ TrainingService = {
 		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\')', [playerId]);
 
 		return DatabaseService.query(queryListSpecifiedTrainings);
-
 	},
 
 	// TODO: The method to be completed.
@@ -229,7 +228,6 @@ TrainingService = {
 		
 		//
 		return DatabaseService.query(queryUpdateTrainingById);
-
 	},
 
 	//
@@ -315,6 +313,7 @@ TrainingService = {
 			if (t.playersCount == t.willcomePlayersCount + 1){
 
 				// Complete the training.
+				// The following two lines could be moved into a function.
 				TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-gathering-completed'})
 
 				//
@@ -588,6 +587,41 @@ TrainingService = {
 		// Update the status of the training to be 'canceled'.
 		.then(function(trainingActivity){
 			return TrainingService.updateForId({status: 'canceled'}, t.id);
+		});
+	},
+
+	//
+	completeIdByPlayerId: function(id, playerId){
+
+		//
+		var t = null;
+
+		//
+		return TrainingService.checkIsIdOkayOrDie(id)
+
+		// Get the training by id.
+		.then(function(training){
+			return TrainingService.findForPlayerIdById(playerId, id);
+		})
+
+		//
+		.then(function(training){
+
+			//
+			t = training;
+
+			// Check if the user is not an admin or the status of the training is gathering-completed.
+			if (t.adminable != 1 || t.status == 'gathering-completed'){
+				throw new BadRequestError('Cannot complete the training, maybe you are not an admin or the training gathering is completed.');
+			}
+
+			//
+			return TrainingActivityService.create({trainingId: t.id, authorId: playerId, type: 'training-gathering-completed'})
+		})
+
+		// Update the status of the training to be 'gathering-completed'.
+		.then(function(trainingActivity){
+			return TrainingService.updateForId({status: 'gathering-completed', playersCount: t.willcomePlayersCount}, t.id);
 		});
 	},
 };

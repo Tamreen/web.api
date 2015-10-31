@@ -10,13 +10,13 @@ require('../server');
 
 // });
 
-TrainingService.listAroundForPlayerId(1, {coordinates: {x: 124, y: 432}})
+// TrainingService.listAroundForPlayerId(1, {coordinates: {x: 124, y: 432}})
 
-.then(function(trainings){
+// .then(function(trainings){
 
-	console.log(trainings);
+// 	console.log(trainings);
 
-});
+// });
 
 // TrainingService.findForPlayerIdById(1, 177)
 
@@ -64,3 +64,9 @@ TrainingService.listAroundForPlayerId(1, {coordinates: {x: 124, y: 432}})
 // 	console.log(training);
 
 // });
+
+TrainingService.completeIdByPlayerId(182, 1)
+
+.then(function(training){
+	console.log(training);
+})
