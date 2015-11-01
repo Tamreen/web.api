@@ -1,14 +1,14 @@
 
 require('../server');
 
-// TrainingService.listSpecifiedForPlayerId(1)
+TrainingService.listSpecifiedForPlayerId(1)
 
-// .then(function(trainings){
+.then(function(trainings){
 
-// 	//
-// 	console.log(trainings);
+	//
+	console.log(trainings);
 
-// });
+});
 
 // TrainingService.listAroundForPlayerId(1, {coordinates: {x: 124, y: 432}})
 
@@ -65,8 +65,8 @@ require('../server');
 
 // });
 
-TrainingService.completeIdByPlayerId(182, 1)
+// TrainingService.completeIdByPlayerId(182, 1)
 
-.then(function(training){
-	console.log(training);
-})
+// .then(function(training){
+// 	console.log(training);
+// })

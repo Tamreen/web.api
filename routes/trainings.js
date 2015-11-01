@@ -26,7 +26,7 @@ router.get('/trainings/specified', authenticatable, function(request, response){
 router.put('/trainings/around', authenticatable, function(request, response){
 
 	//
-	if (validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.x) || validator.isNull(request.body.coordinates.y)){
+	if (validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.y) || validator.isNull(request.body.coordinates.x)){
 		return response.status(400).send({
 			'message': 'الرجاء التأكّد من تفعيل الموقع الجغرافيّ الحاليّ.',
 		});
@@ -68,7 +68,7 @@ router.post('/trainings', authenticatable, function(request, response){
 	}
 
 	//
-	if (request.body.publicized == 1 && (validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.x) || validator.isNull(request.body.coordinates.y))){
+	if (request.body.publicized == 1 && (validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.y) || validator.isNull(request.body.coordinates.x))){
 		return response.status(400).send({
 			'message': 'الرجاء تحديد موقع الملعب الجغرافيّ.',
 		});
@@ -212,7 +212,7 @@ router.put('/trainings/:id/apologize', authenticatable, function(request, respon
 router.put('/trainings/:id', authenticatable, function(request, response){
 
 	//
-	if (!validator.isNumeric(request.params.id) || validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.x) || validator.isNull(request.body.coordinates.y)){
+	if (!validator.isNumeric(request.params.id) || validator.isNull(request.body.coordinates) || validator.isNull(request.body.coordinates.y) || validator.isNull(request.body.coordinates.x)){
 		return response.status(400).send({
 			'message': 'Please make sure everything is valid.',
 		});
@@ -239,7 +239,7 @@ router.put('/trainings/:id', authenticatable, function(request, response){
 			throw new UnauthorizedError('You cannot update the training since you are not an admin.');
 		}
 
-		return TrainingService.updateCoordinatesForId(coordinates.x, coordinates.y, id)
+		return TrainingService.updateCoordinatesForId(coordinates.y, coordinates.x, id)
 	})
 
 	//

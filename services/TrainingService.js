@@ -42,37 +42,25 @@ TrainingService = {
 
 		.then(function(players){
 
-			console.log('Number of players', players.length);
-
 			return Promise.each(players, function(player){
-
-				console.log(player.role);
-
 				return TrainingPlayerService.findOrCreate({trainingId: id, playerId: player.id, decision: 'notyet', role: player.role});
-
 			});
 
 		});
 	},
 
 	// TODO: What about canceled trainings, it would show forever.
-	// TODO: Or as a solution we could order them by latest.
-	// TODO: Order the training with a very accurate ordering.
 	listSpecifiedForPlayerId: function(playerId){
 
-		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\')', [playerId]);
+		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage, (select count(id) from activityPlayers where playerId = ? and readable = 0 and activityId in (select id from trainingActivities where trainingId = t.id)) as activitiesCount from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') order by coalesce(t.modifiedAt, t.createdAt) desc', [playerId, playerId]);
 
 		return DatabaseService.query(queryListSpecifiedTrainings);
 	},
 
-	// TODO: The method to be completed.
-	// TODO: Or as a solution we could order them by latest.
-	// TODO: Order the training with a very accurate ordering.
+	//
 	listAroundForPlayerId: function(playerId, parameters){
 
-		var queryListAroundTrainings = DatabaseService.format('select *, st_distance(coordinates, point(?, ?)) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and st_distance(coordinates, point(?, ?)) is not null', [parameters.coordinates.x, parameters.coordinates.y, playerId, parameters.coordinates.x, parameters.coordinates.y]);
-
-		console.log(queryListAroundTrainings);
+		var queryListAroundTrainings = DatabaseService.format('select *, (6371 * acos(cos(radians(?)) * cos(radians(y(coordinates))) * cos(radians(x(coordinates)) - radians(?)) + sin( radians(?)) * sin(radians(y(coordinates))))) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage, (select count(id) from activityPlayers where playerId = ? and readable = 0 and activityId in (select id from trainingActivities where trainingId = t.id)) as activitiesCount from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and publicized = 1 having distance < ? order by distance asc, coalesce(t.modifiedAt, t.createdAt) desc', [parameters.coordinates.y, parameters.coordinates.x, parameters.coordinates.y, playerId, playerId, nconf.get('trainingMaximumDistance')]);
 
 		return DatabaseService.query(queryListAroundTrainings);
 	},
@@ -108,8 +96,6 @@ TrainingService = {
 			queryInsertTraining = queryInsertTraining + ', coordinates = geomfromtext(?)';
 			queryInsertTraining = DatabaseService.format(queryInsertTraining, 'point(' + coordinates.x + ' ' + coordinates.y + ')');
 		}
-
-		console.log(queryInsertTraining);
 
 		//
 		return DatabaseService.query(queryInsertTraining)
@@ -219,7 +205,7 @@ TrainingService = {
 	},
 
 	//
-	updateCoordinatesForId: function(x, y, id){
+	updateCoordinatesForId: function(y, x, id){
 
 		//
 		var modifiedAt = new Date();

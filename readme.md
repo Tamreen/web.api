@@ -10,6 +10,7 @@
 
 ## TODO:
 
+- Validate the time when adding a training, it must be future.
 - Make the trainings start and complete (probably by creating a worker).
 - Create a worker to make the activities of all players read if a training completed or canceled.
 - Remove debugging notes later.
@@ -18,6 +19,8 @@
 - Make all errors and exceptions in Arabic.
 - Move the HTTPS logs to separated files.
 - Beautify the name of the trainings.
+- The coordinates should be y, x rather than x, y.
+- Update the API documentation or make it automatic.
 
 ## /api/v2
 - [x] GET /hellos
