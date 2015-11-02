@@ -186,7 +186,8 @@ TrainingService = {
 		//
 		.then(function(){
 
-			// TODO: Read the activities if the user called this methods.
+			// Read the activities if the user called this methods.
+			TrainingActivityService.markActivitiesReadForTrainingIdByPlayerId(id, playerId);
 
 			return t;
 		})

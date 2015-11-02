@@ -54,6 +54,7 @@ ActivityPlayerService = {
 	},
 
 	//
+	// TODO: This method to be removed.
 	markAsReadManyByPlayerId: function(activities, playerId){
 
 		// Extract the ids only from the activities.

@@ -186,33 +186,13 @@ TrainingActivityService = {
 	},
 
 	//
-	listByTrainingIdAndPlayerId: function(trainingId, playerId){
+	markActivitiesReadForTrainingIdByPlayerId: function(trainingId, playerId){
 
-		return TrainingService.findForPlayerIdById(playerId, trainingId)
-
-		//
-		.then(function(training){
-
-			if (!training){
-				throw new BadRequestError('لا يُمكن العثور على التمرين.');
-			}
-
-			//
-			var queryGetTrainingActivities = DatabaseService.format('select trainingActivities.*, players.fullname as author from trainingActivities, players where trainingActivities.authorId = players.id and trainingActivities.trainingId = ? order by trainingActivities.createdAt asc', [training.id]);
-
-			//
-			return DatabaseService.query(queryGetTrainingActivities);
-		})
+		// 
+		var updateActivityPlayerParameters = {readable: 1, modifiedAt: new Date()};
+		var queryUpdateActivityPlayers = DatabaseService.format('update activityPlayers set ? where playerId = ? and activityId in (select id from trainingActivities where trainingId = ?)', [updateActivityPlayerParameters, playerId, trainingId]);
 
 		//
-		.then(function(activities){
-
-			console.log(activities);
-
-			// Set that the activity is read by player id.
-			ActivityPlayerService.markAsReadManyByPlayerId(activities, playerId);
-
-			return activities;
-		});
+		return DatabaseService.query(queryUpdateActivityPlayers);
 	},
 };
