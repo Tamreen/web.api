@@ -37,9 +37,9 @@ require('../server');
 
 // });
 
-GroupService.listPlayersByIdsForPlayerId([6, 104], 1)
+// GroupService.listPlayersByIdsForPlayerId([6, 104], 1)
 
-//
-.then(function(players){
-	console.log('Number of players', players.length);
-});
+// //
+// .then(function(players){
+// 	console.log('Number of players', players.length);
+// });

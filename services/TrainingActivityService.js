@@ -190,7 +190,7 @@ TrainingActivityService = {
 
 		// 
 		var updateActivityPlayerParameters = {readable: 1, modifiedAt: new Date()};
-		var queryUpdateActivityPlayers = DatabaseService.format('update activityPlayers set ? where playerId = ? and activityId in (select id from trainingActivities where trainingId = ?)', [updateActivityPlayerParameters, playerId, trainingId]);
+		var queryUpdateActivityPlayers = DatabaseService.format('update activityPlayers set ? where playerId = ? and activityId in (select id from trainingActivities where trainingId = ?) and readable = 0', [updateActivityPlayerParameters, playerId, trainingId]);
 
 		//
 		return DatabaseService.query(queryUpdateActivityPlayers);

@@ -1,44 +1,44 @@
 
-require('colors');
-require('../server');
+// require('colors');
+// require('../server');
 
-DatabaseService.query('select * from trainings')
+// DatabaseService.query('select * from trainings')
 
-.then(function(trainings){
+// .then(function(trainings){
 
-	// Walk up on every training.
-	trainings.forEach(function(training){
+// 	// Walk up on every training.
+// 	trainings.forEach(function(training){
 
-		var queryGetBestTrainingPlayer = DatabaseService.format('select * from trainingPlayers where trainingId = ? limit 1', [training.id]);
+// 		var queryGetBestTrainingPlayer = DatabaseService.format('select * from trainingPlayers where trainingId = ? limit 1', [training.id]);
 
-		// Execute the query.
-		DatabaseService.query(queryGetBestTrainingPlayer)
+// 		// Execute the query.
+// 		DatabaseService.query(queryGetBestTrainingPlayer)
 
-		//
-		.then(function(trainingPlayers){
+// 		//
+// 		.then(function(trainingPlayers){
 
-			// Get the first training player.
-			var trainingPlayer = trainingPlayers[0];
+// 			// Get the first training player.
+// 			var trainingPlayer = trainingPlayers[0];
 
-			return trainingPlayer;
+// 			return trainingPlayer;
 
-		})
+// 		})
 
-		//
-		.then(function(trainingPlayer){
+// 		//
+// 		.then(function(trainingPlayer){
 
-			TrainingService.findForPlayerIdById(trainingPlayer.playerId, trainingPlayer.trainingId)
+// 			TrainingService.findForPlayerIdById(trainingPlayer.playerId, trainingPlayer.trainingId)
 
-			//
-			.then(function(training){
+// 			//
+// 			.then(function(training){
 
-				console.log(training.stadium, training.status, training.playersCount, training.willcomePlayersCount);
-				console.log('--------------------------------------'.red);
+// 				console.log(training.stadium, training.status, training.playersCount, training.willcomePlayersCount);
+// 				console.log('--------------------------------------'.red);
 
-			});
+// 			});
 
-		});
+// 		});
 
-	});
+// 	});
 
-});
+// });

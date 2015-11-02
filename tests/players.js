@@ -1,20 +1,20 @@
 
-require('../server');
-require('colors');
+// require('../server');
+// require('colors');
 
-//
-request = require('supertest');
+// //
+// request = require('supertest');
 
-console.log('YOU CALLED ME!');
+// console.log('YOU CALLED ME!');
 
-//
-request('http://localhost:4000/api/v2')
+// //
+// request('http://localhost:4000/api/v2')
 
-.put('/players')
+// .put('/players')
 
-.expect(401, function(error){
-	console.log(error);
-});
+// .expect(401, function(error){
+// 	console.log(error);
+// });
 
 // .end(function(error, response){
 // 	console.log(error);

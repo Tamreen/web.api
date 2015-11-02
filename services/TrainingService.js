@@ -52,7 +52,7 @@ TrainingService = {
 	// TODO: What about canceled trainings, it would show forever.
 	listSpecifiedForPlayerId: function(playerId){
 
-		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage, (select count(id) from activityPlayers where playerId = ? and readable = 0 and activityId in (select id from trainingActivities where trainingId = t.id)) as activitiesCount from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') order by coalesce(t.modifiedAt, t.createdAt) desc', [playerId, playerId]);
+		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage, (select count(id) from activityPlayers where playerId = ? and readable = 0 and activityId in (select id from trainingActivities where trainingId = t.id)) as activitiesCount from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') order by activitiesCount desc, coalesce(t.modifiedAt, t.createdAt) desc', [playerId, playerId]);
 
 		return DatabaseService.query(queryListSpecifiedTrainings);
 	},
@@ -60,7 +60,7 @@ TrainingService = {
 	//
 	listAroundForPlayerId: function(playerId, parameters){
 
-		var queryListAroundTrainings = DatabaseService.format('select *, (6371 * acos(cos(radians(?)) * cos(radians(y(coordinates))) * cos(radians(x(coordinates)) - radians(?)) + sin( radians(?)) * sin(radians(y(coordinates))))) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage, (select count(id) from activityPlayers where playerId = ? and readable = 0 and activityId in (select id from trainingActivities where trainingId = t.id)) as activitiesCount from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and publicized = 1 having distance < ? order by distance asc, coalesce(t.modifiedAt, t.createdAt) desc', [parameters.coordinates.y, parameters.coordinates.x, parameters.coordinates.y, playerId, playerId, nconf.get('trainingMaximumDistance')]);
+		var queryListAroundTrainings = DatabaseService.format('select *, (6371 * acos(cos(radians(?)) * cos(radians(y(coordinates))) * cos(radians(x(coordinates)) - radians(?)) + sin( radians(?)) * sin(radians(y(coordinates))))) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage, (select count(id) from activityPlayers where playerId = ? and readable = 0 and activityId in (select id from trainingActivities where trainingId = t.id)) as activitiesCount from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and publicized = 1 having distance < ? order by distance asc, activitiesCount desc, coalesce(t.modifiedAt, t.createdAt) desc', [parameters.coordinates.y, parameters.coordinates.x, parameters.coordinates.y, playerId, playerId, nconf.get('trainingMaximumDistance')]);
 
 		return DatabaseService.query(queryListAroundTrainings);
 	},
@@ -132,11 +132,14 @@ TrainingService = {
 	// TODO: Not sure about readAt value.
 	listPlayersById: function(id){
 
-		var queryListTrainingPlayers = DatabaseService.format('select players.fullname, players.id, trainingPlayers.decision as decision from trainingPlayers, players where trainingPlayers.playerId = players.id and trainingPlayers.trainingId = ?', [id]);
+		var queryListTrainingPlayers = DatabaseService.format('select players.fullname, players.id, trainingPlayers.decision as decision, activityPlayers.modifiedAt as readAt from players, trainingPlayers, trainingActivities, activityPlayers where trainingPlayers.playerId = players.id and trainingPlayers.trainingId = ? and trainingActivities.trainingId = trainingPlayers.trainingId and trainingActivities.type = \'training-gathering-started\' and activityPlayers.activityId = trainingActivities.id and activityPlayers.playerId = players.id', [id]);
+
+		console.log(queryListTrainingPlayers);
 
 		return DatabaseService.query(queryListTrainingPlayers);
 	},
 
+	//
 	detailsByPlayerIdAndId: function(playerId, id){
 
 		var t = null;

@@ -1,11 +1,11 @@
 
 require('../server');
 
-ActivityPlayerService.countNotReadForPlayerId(1)
+// ActivityPlayerService.countNotReadForPlayerId(1)
 
-.then(function(result){
+// .then(function(result){
 
-	//
-	console.log(result);
+// 	//
+// 	console.log(result);
 
-});
+// });

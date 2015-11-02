@@ -1,18 +1,55 @@
 
 //
-// TODO: This function has to be validated.
+//	
 updateTrainingStatuses = function(){
 
 	console.log('updateTrainingStatuses');
 
 	// Update the trainings that started.
-	// TODO: Notify the users about the trainings.
-	DatabaseService.query('update trainings set status = \'started\' where now() > startedAt and (status <> \'canceled\' and status <> \'completed\' and status <> \'started\')');
+	var queryGetStartedTrainings = DatabaseService.format('select trainings.id, trainingActivities.authorId from trainings, trainingActivities where trainingActivities.trainingId = trainings.id and trainingActivities.type = \'training-gathering-started\' and now() > trainings.startedAt and (trainings.status <> \'canceled\' and trainings.status <> \'completed\' and trainings.status <> \'started\')');
+
+	DatabaseService.query(queryGetStartedTrainings)
+
+	//
+	.then(function(trainings){
+
+		console.log(trainings);
+
+		return Promise.each(trainings, function(training){
+
+			return TrainingActivityService.create({trainingId: training.id, authorId: training.authorId, type: 'training-started'})
+
+			//
+			.then(function(trainingActivity){
+				return TrainingService.updateForId({status: 'started'}, training.id);
+			});
+		});
+	})
 
 	// Update the trainings that completed.
-	// TODO: Notify the users about the trainings.
-	// TODO: Make the value of the hours in config rather than in here.
-	DatabaseService.query('update trainings set status = \'completed\' where now() > date_add(startedAt, interval 2 hour) and (status <> \'canceled\' and status <> \'completed\')');
+	.then(function(){
+
+		var queryGetCompletedTrainings = DatabaseService.format('select trainings.id, trainingActivities.authorId from trainings, trainingActivities where trainingActivities.trainingId = trainings.id and trainingActivities.type = \'training-gathering-started\' and now() > date_add(trainings.startedAt, interval ? hour) and (trainings.status <> \'canceled\' and trainings.status <> \'completed\')', [nconf.get('trainingInterval')]);
+
+		return DatabaseService.query(queryGetCompletedTrainings);
+	})
+
+	//
+	.then(function(trainings){
+
+		console.log(trainings);
+
+		return Promise.each(trainings, function(training){
+
+			return TrainingActivityService.create({trainingId: training.id, authorId: training.authorId, type: 'training-completed'})
+
+			//
+			.then(function(trainingActivity){
+				return TrainingService.updateForId({status: 'completed'}, training.id);
+			});
+		});
+	});
+
 };
 
 // The worker runs every minute (1m 60s 1000ms).

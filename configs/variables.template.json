@@ -7,9 +7,9 @@
 	"appPort": 4000,
 	"appSalt": "visit https://www.grc.com/passwords.htm for more details",
 
-        "sslCert": "certificates/ssl/cert.crt",
-        "sslKey": "certificates/ssl/key.key",
-        "sslCa": "certificates/ssl/ca.crt",
+	"sslCert": "certificates/ssl/cert.crt",
+	"sslKey": "certificates/ssl/key.key",
+	"sslCa": "certificates/ssl/ca.crt",
 
 	"databaseHost": "localhost",
 	"databasePort": 3306,
@@ -36,5 +36,6 @@
 	"appleStoreUrl": "https://itunes.apple.com/us/app/tmryn/id974963540?ls=1&mt=8",
 
 	"trainingMinutesForProfessional": 120,
-	"trainingMaximumDistance": 30
+	"trainingMaximumDistance": 30,
+	"trainingInterval": 2
 }

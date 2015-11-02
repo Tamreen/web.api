@@ -1,11 +1,13 @@
 
-require('../server');
+var server = require('../server');
+var assert = require('assert');
 
-// findById.
+describe('User service', function(){
 
-UserService.findById(1)
+	it('fetches the user #1', function(){
+		UserService.findById(1).then(function(user){
+			assert.equal(user.id, 1);
+		});
+	});
 
-.then(function(user){
-	console.log(user);
 });
-
