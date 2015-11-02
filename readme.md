@@ -1,3 +1,4 @@
+
 `[TOC]`
 
 ## How to install?
@@ -8,18 +9,19 @@
 - Update the variables in the file <code>configs/variables.json</code> with the appropriate values.
 - Run <code>node server.js</code>.
 
-## TODO:
-
-- Validate the time when adding a training, it must be future.
+## Done:
 - Make the trainings start and complete (probably by creating a worker).
-- Create a worker to make the activities of all players read if a training completed or canceled.
+- Create a worker to make the activities of all players read if a training completed or canceled (No need anymore).
+- Beautify the name of the trainings.
+- The coordinates should be y, x rather than x, y.
+
+## TODO:
+- Validate the time when adding a training, it must be future.
 - Remove debugging notes later.
 - When adding a new member to a group, make sure that the player joins the current trainings.
 - When sending an invalid JSON, the API should response differently.
 - Make all errors and exceptions in Arabic.
 - Move the HTTPS logs to separated files.
-- Beautify the name of the trainings.
-- The coordinates should be y, x rather than x, y.
 - Update the API documentation or make it automatic.
 
 ## /api/v2

@@ -75,7 +75,7 @@ TrainingService = {
 		var coordinates = null;
 
 		//
-		parameters.name = moment(parameters.startedAt).format('dddd، DD MMMM YYYY، hh:mm a');
+		parameters.name = moment(parameters.startedAt).format('dddd hh:mm a, ') + parameters.stadium;
 		parameters.createdAt = new Date();
 
 		//
