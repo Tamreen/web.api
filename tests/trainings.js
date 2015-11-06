@@ -71,8 +71,8 @@ require('../server');
 // 	console.log(training);
 // })
 
-// TrainingService.listPlayersById(200)
+TrainingService.listPlayersById(200)
 
-// .then(function(players){
-// 	console.log(players);
-// })
+.then(function(players){
+	console.log(players);
+});

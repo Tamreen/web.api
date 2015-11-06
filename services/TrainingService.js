@@ -132,7 +132,7 @@ TrainingService = {
 	// TODO: Not sure about readAt value.
 	listPlayersById: function(id){
 
-		var queryListTrainingPlayers = DatabaseService.format('select players.fullname, players.id, trainingPlayers.decision as decision, activityPlayers.modifiedAt as readAt from players, trainingPlayers, trainingActivities, activityPlayers where trainingPlayers.playerId = players.id and trainingPlayers.trainingId = ? and trainingActivities.trainingId = trainingPlayers.trainingId and trainingActivities.type = \'training-gathering-started\' and activityPlayers.activityId = trainingActivities.id and activityPlayers.playerId = players.id', [id]);
+		var queryListTrainingPlayers = DatabaseService.format('select players.id, players.fullname, trainingPlayers.decision as decision, activityPlayers.modifiedAt as readAt from players, trainingPlayers, trainingActivities, activityPlayers where trainingPlayers.playerId = players.id and trainingPlayers.trainingId = ? and trainingActivities.trainingId = trainingPlayers.trainingId and activityPlayers.activityId = trainingActivities.id and activityPlayers.playerId = players.id group by players.id order by activityPlayers.modifiedAt desc', [id]);
 
 		console.log(queryListTrainingPlayers);
 

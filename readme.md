@@ -20,9 +20,11 @@
 - Remove debugging notes later.
 - When adding a new member to a group, make sure that the player joins the current trainings.
 - When sending an invalid JSON, the API should response differently.
+- Fix the headers of the API too.
 - Make all errors and exceptions in Arabic.
 - Move the HTTPS logs to separated files.
 - Update the API documentation or make it automatic.
+- Fix the issue when displaying the players of a training (readAt).
 
 ## /api/v2
 - [x] GET /hellos
