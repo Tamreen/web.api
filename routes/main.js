@@ -5,9 +5,9 @@ http = require('http');
 
 // SSL.
 sslOptions = {
-  cert: fs.readFileSync(nconf.get('sslCert')),
-  key: fs.readFileSync(nconf.get('sslKey')),
-  ca: [fs.readFileSync(nconf.get('sslCa'))],
+	cert: fs.readFileSync(nconf.get('sslCert')),
+	key: fs.readFileSync(nconf.get('sslKey')),
+	ca: [fs.readFileSync(nconf.get('sslCa'))],
 };
 
 //
@@ -15,7 +15,7 @@ router = express.Router();
 
 // Access control allow.
 app.use(function(request, response, next) {
-	response.header('Access-Control-Allow-Origin', '*');
+	// response.header('Access-Control-Allow-Origin', '*');
 	response.header('Access-Control-Allow-Headers', 'X-Requested-With');
 	next();
 });

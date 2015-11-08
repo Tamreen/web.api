@@ -37,7 +37,6 @@ moment.locale('ar-sa');
 
 //
 app = express();
-port = 4000;
 
 // Log about it.
 app.use(morgan('combined'));

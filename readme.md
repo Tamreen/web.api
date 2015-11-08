@@ -14,6 +14,7 @@
 - Create a worker to make the activities of all players read if a training completed or canceled (No need anymore).
 - Beautify the name of the trainings.
 - The coordinates should be y, x rather than x, y.
+- Fix the issue when displaying the players of a training (readAt).
 
 ## TODO:
 - Validate the time when adding a training, it must be future.
@@ -24,7 +25,6 @@
 - Make all errors and exceptions in Arabic.
 - Move the HTTPS logs to separated files.
 - Update the API documentation or make it automatic.
-- Fix the issue when displaying the players of a training (readAt).
 
 ## /api/v2
 - [x] GET /hellos

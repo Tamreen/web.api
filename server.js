@@ -19,10 +19,12 @@ app.use('/api/v2', router);
 
 var port = nconf.get('appPort');
 
+// Uncomment this before anything.
 if (nconf.get('environment') == 'development'){
 	http.createServer(app).listen(port);
 }else{
 	https.createServer(sslOptions, app).listen(port);
 }
+//http.createServer(app).listen(port);
 
 console.log('App active on localhost:' + port);
