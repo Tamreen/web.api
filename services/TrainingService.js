@@ -230,12 +230,12 @@ TrainingService = {
 
 			// Check if the training is valid.
 			if (validator.isNull(training)){
-				throw new BadRequestError('checkIsIdOkayOrDie: Cannot find the training.');
+				throw new BadRequestError('لم يتم العثور على التمرين.');
 			}
 
 			// Check if the training is not okay.
 			if (training.status == 'canceled' || training.status == 'started' || training.status == 'completed'){
-				throw new BadRequestError('Cannot take decision for now.');
+				throw new BadRequestError('لا يُمكن اتّخاذ الإجراء في الوقت الراهن.');
 			}
 
 			return training;
@@ -280,7 +280,7 @@ TrainingService = {
 
 			// Check if the training is not gathering or the player has decided.
 			if (t.status != 'gathering' || t.decision == 'willcome'){
-				throw new BadRequestError('The training is either completed or you have already decided.');
+				throw new BadRequestError('التمرين إمّا مُكتمل أو أنّك قد قرّرت مُسبقًا.');
 			}
 
 			//
@@ -399,7 +399,7 @@ TrainingService = {
 
 			// Check if the player is not an admin, or the training is already professionalized, or the gathering is completed.
 			if (training.adminable != 1 || training.professionalized == 1 || training.status == 'gathering-completed'){
-				throw new BadRequestError('Cannot professionalize the training, maybe you are not an admin or it is already professionalized or the gathering is completed.');
+				throw new BadRequestError('لا يُمكن فتح الباب لجلب محترفين، قد لا تكون مديرًا أو أنّ الباب مفتوحٌ لجلب المحترفين سلفًا، أو أنّ التحضير مُكتمل.');
 			}
 
 			//
@@ -433,7 +433,7 @@ TrainingService = {
 		.then(function(training){
 
 			if (training.professionalized == 0 || training.status == 'gathering-completed'){
-				throw new BadRequestError('The training is not professionalized or the gathering is completed.');
+				throw new BadRequestError('باب جلب المحترفين لهذا التمرين ليس مفتوحًا أو أنّ التحضير مُكتمل.');
 			}
 
 			// Fulfill the promise.
@@ -491,12 +491,12 @@ TrainingService = {
 
 			// Check if the player is not an admin, or the training is already publicized, or the gathering is completed.
 			if (training.adminable != 1 || training.publicized == 1 || training.status == 'gathering-completed'){
-				throw new BadRequestError('Cannot publicized the training, maybe you are not an admin or it is already publicized or the gathering is completed.');
+				throw new BadRequestError('لا يُمكن فتح الباب للعموم، قد لا تكون مديرًا أو أنّ الباب مفتوحٌ للعموم سلفًا، أو أنّ التحضير مُكتمل.');
 			}
 
 			// Check if the training does not have coordinates.
 			if (validator.isNull(training.coordinates)){
-				throw new ConflictError('The coordinates have to be provided.');
+				throw new ConflictError('لابدّ من تضمين الإحداثيّات.');
 			}
 
 			//
@@ -532,7 +532,7 @@ TrainingService = {
 
 			// Check if the player is not an admin, or the gathering is completed.
 			if (training.adminable != 1 || training.status == 'gathering-completed'){
-				throw new BadRequestError('Cannot poke the training, maybe you are not an admin or the gathering is completed.');
+				throw new BadRequestError('لا يُمكن الإرسال، قد لا تكون مديرًا أو أنّ التحضير مُكتمل.');
 			}
 
 			//
@@ -567,7 +567,7 @@ TrainingService = {
 
 			//
 			if (t.adminable != 1){
-				throw new BadRequestError('Cannot cancel the training since you are not an admin.');
+				throw new BadRequestError('لا يُمكن إلغاء التمرين لكونك لست مديرًا.');
 			}
 
 			//
@@ -602,7 +602,7 @@ TrainingService = {
 
 			// Check if the user is not an admin or the status of the training is gathering-completed.
 			if (t.adminable != 1 || t.status == 'gathering-completed'){
-				throw new BadRequestError('Cannot complete the training, maybe you are not an admin or the training gathering is completed.');
+				throw new BadRequestError('لا يُمكن الكتفاء بالعدد الحاليّ قد لا تكون مديرًا أو أنّ التحضير مُكتمل.');
 			}
 
 			//

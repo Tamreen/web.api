@@ -236,7 +236,7 @@ router.put('/trainings/:id', authenticatable, function(request, response){
 	.then(function(training){
 
 		if (training.adminable != 1){
-			throw new UnauthorizedError('You cannot update the training since you are not an admin.');
+			throw new UnauthorizedError('لا يُمكنك تحديث التمرين لكونك لست مديرًا.');
 		}
 
 		return TrainingService.updateCoordinatesForId(coordinates.y, coordinates.x, id)

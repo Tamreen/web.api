@@ -249,7 +249,7 @@ GroupService = {
 			// Check if the player is an admin for all group ids.
 
 			if (ids.length == 0){
-				return reject(new BadRequestError('Please specify the groups to be searched for.'));
+				return reject(new BadRequestError('الرجاء تحديد المجموعات التي ترغب في البحث عنها.'));
 			}
 
 
@@ -264,7 +264,7 @@ GroupService = {
 
 				if (groupPlayers.length != ids.length){
 					// TODO: This message should be kinder.
-					return reject(new UnauthorizedError('You cannot reach these groups, you are not admin for them.'));
+					return reject(new UnauthorizedError('لا يُمكنك الوصول إلى هذه المجموعات، لست مديرًا لها.'));
 				}
 
 				//
