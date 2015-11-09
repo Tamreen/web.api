@@ -17,6 +17,7 @@ app.use('/api/v2', router);
 // Start listening to the specified port.
 // app.listen(port);
 
+var appName = nconf.get('appName');
 var port = nconf.get('appPort');
 
 // Uncomment this before anything.
@@ -27,4 +28,4 @@ if (nconf.get('environment') == 'development'){
 }
 //http.createServer(app).listen(port);
 
-console.log('App active on localhost:' + port);
+console.log('%s is up and running on localhost:%d', appName, port);
