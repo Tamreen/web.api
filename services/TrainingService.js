@@ -21,7 +21,7 @@ TrainingService = {
 	//
 	findForPlayerIdById: function(playerId, id){
 		
-		var queryGetTraining = DatabaseService.format('select trainings.*, (trainingPlayers.role = \'admin\') as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, trainingPlayers.decision, (select (count(id)/trainings.playersCount)*100 from trainingPlayers where trainingId = trainings.id and decision = \'willcome\') as percentage from trainings, trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.playerId = ? and trainings.id = ?', [playerId, id]);
+		var queryGetTraining = DatabaseService.format('select trainingPlayers.playerId, trainings.*, ifnull(trainingPlayers.decision, \'notyet\') as decision, ifnull(trainingPlayers.role = \'admin\', 0) as adminable, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'willcome\') willcomePlayersCount, (select count(id) from trainingPlayers where trainingPlayers.trainingId = trainings.id and trainingPlayers.decision = \'apologize\') apologizePlayersCount, (select (count(id)/trainings.playersCount)*100 from trainingPlayers where trainingId = trainings.id and decision = \'willcome\') as percentage from trainings left join trainingPlayers on trainings.id = trainingPlayers.trainingId and trainingPlayers.playerId = ? where trainings.id = ?', [playerId, id]);
 
 		return DatabaseService.query(queryGetTraining).then(function(trainings){
 
@@ -31,6 +31,12 @@ TrainingService = {
 			}
 
 			var training = trainings[0];
+
+			// Check if the player is not in the training and the training is not publicized.
+			if (validator.isNull(training.playerId) && training.publicized == 0){
+				return null;
+			}
+
 			return training;
 		});
 	},
@@ -49,10 +55,10 @@ TrainingService = {
 		});
 	},
 
-	// TODO: What about canceled trainings, it would show forever.
+	//
 	listSpecifiedForPlayerId: function(playerId){
 
-		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage, (select count(id) from activityPlayers where playerId = ? and readable = 0 and activityId in (select id from trainingActivities where trainingId = t.id)) as activitiesCount from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') order by activitiesCount desc, coalesce(t.modifiedAt, t.createdAt) desc', [playerId, playerId]);
+		var queryListSpecifiedTrainings = DatabaseService.format('select *, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage, (select count(id) from activityPlayers where playerId = ? and readable = 0 and activityId in (select id from trainingActivities where trainingId = t.id)) as activitiesCount from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\' and date_add(t.startedAt, interval ? hour) > now()) order by activitiesCount desc, coalesce(t.modifiedAt, t.createdAt) desc', [playerId, playerId, nconf.get('trainingInterval')]);
 
 		return DatabaseService.query(queryListSpecifiedTrainings);
 	},
@@ -60,7 +66,7 @@ TrainingService = {
 	//
 	listAroundForPlayerId: function(playerId, parameters){
 
-		var queryListAroundTrainings = DatabaseService.format('select *, (6371 * acos(cos(radians(?)) * cos(radians(y(coordinates))) * cos(radians(x(coordinates)) - radians(?)) + sin( radians(?)) * sin(radians(y(coordinates))))) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage, (select count(id) from activityPlayers where playerId = ? and readable = 0 and activityId in (select id from trainingActivities where trainingId = t.id)) as activitiesCount from trainings t where t.id in (select trainingId from trainingPlayers where playerId = ?) and (t.status <> \'started\' and t.status <> \'completed\') and publicized = 1 having distance < ? order by distance asc, activitiesCount desc, coalesce(t.modifiedAt, t.createdAt) desc', [parameters.coordinates.y, parameters.coordinates.x, parameters.coordinates.y, playerId, playerId, nconf.get('trainingMaximumDistance')]);
+		var queryListAroundTrainings = DatabaseService.format('select *, (6371 * acos(cos(radians(?)) * cos(radians(y(coordinates))) * cos(radians(x(coordinates)) - radians(?)) + sin( radians(?)) * sin(radians(y(coordinates))))) as distance, (select (count(id)/t.playersCount)*100 from trainingPlayers where trainingId = t.id and decision = \'willcome\') as percentage, (select count(id) from activityPlayers where playerId = ? and readable = 0 and activityId in (select id from trainingActivities where trainingId = t.id)) as activitiesCount from trainings t where (t.status <> \'started\' and t.status <> \'completed\' and date_add(t.startedAt, interval ? hour) > now()) and publicized = 1 having distance < ? order by distance asc, activitiesCount desc, coalesce(t.modifiedAt, t.createdAt) desc', [parameters.coordinates.y, parameters.coordinates.x, parameters.coordinates.y, playerId, nconf.get('trainingInterval'), nconf.get('trainingMaximumDistance')]);
 
 		return DatabaseService.query(queryListAroundTrainings);
 	},

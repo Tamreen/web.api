@@ -1,5 +1,56 @@
 
-require('../server');
+var server = require('../server');
+var assert = require('assert');
+
+describe('Training service', function(){
+
+	//
+	it('Fetches a training that is publicized and the player is not in.', function(){
+
+		return TrainingService.findForPlayerIdById(869, 212)
+
+		.then(function(training){
+			assert.equal(training.decision, 'notyet');
+		});
+	});
+
+	//
+	it('Fetches a training that the player is in and is admin.', function(){
+		return TrainingService.findForPlayerIdById(1, 212)
+		.then(function(training){
+			assert.equal(training.adminable, 1);
+		});
+	});
+
+	//
+	it('Fetches a training that the player is in and is not admin.', function(){
+		return TrainingService.findForPlayerIdById(869, 212)
+		.then(function(training){
+			assert.equal(training.adminable, 0);
+		});
+	});
+
+	//
+	it('Fetches a training that is not publicized and the player is not in.', function(){
+
+		return TrainingService.findForPlayerIdById(869, 204)
+
+		.then(function(training){
+			assert.equal(training, null);
+		});
+	});
+
+	//
+	it('Fetches a training that is not publicized and the player is in.', function(){
+
+		return TrainingService.findForPlayerIdById(717, 204)
+
+		.then(function(training){
+			assert.notEqual(training, null);
+		});
+	});
+
+});
 
 // TrainingService.listSpecifiedForPlayerId(1)
 
@@ -15,14 +66,6 @@ require('../server');
 // .then(function(trainings){
 
 // 	console.log(trainings);
-
-// });
-
-// TrainingService.findForPlayerIdById(1, 177)
-
-// .then(function(training){
-
-// 	console.log(training);
 
 // });
 
@@ -71,8 +114,8 @@ require('../server');
 // 	console.log(training);
 // })
 
-TrainingService.listPlayersById(200)
+// TrainingService.listPlayersById(200)
 
-.then(function(players){
-	console.log(players);
-});
+// .then(function(players){
+// 	console.log(players);
+// });
