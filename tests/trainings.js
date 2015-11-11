@@ -50,6 +50,17 @@ describe('Training service', function(){
 		});
 	});
 
+	//
+	it('Fetches a training that does not exist but the player does.', function(){
+
+		return TrainingService.findForPlayerIdById(1, 4444444)
+
+		.then(function(training){
+			assert.equal(training, null);
+		});
+
+	});
+
 });
 
 // TrainingService.listSpecifiedForPlayerId(1)
