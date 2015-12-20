@@ -45,6 +45,12 @@ alter table trainings drop column groupId;
 
 update trainings set status = 'gathering-completed' where status = 'completed';
 
+-- TODO: Update the gathering trainings to be completed for the first time.
+
+update trainings set status = 'started' where now() > startedAt and (status <> 'canceled' and status <> 'completed' and status <> 'started');
+
+update trainings set status = 'completed' where now() > date_add(startedAt, interval 2 hour) and (status <> 'canceled' and status <> 'completed');
+
 -- Add 'role' and modify 'decision' in trainingPlayers.
 
 alter table trainingPlayers add column role enum('member', 'admin') not null after playerId;
