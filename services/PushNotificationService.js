@@ -134,12 +134,13 @@ PushNotificationService = {
 	//
 	pushToIosChunks: function(notification, userTokens){
 
+		// Create the connection.
+		var apnConnection = new apn.Connection(apnOptions);
+
 		userTokens.forEach(function(userToken){
 
 			try{
 
-				// Create the connection.
-				var apnConnection = new apn.Connection(apnOptions);
 				var device = new apn.Device(userToken);
 
 				// Send the message.
